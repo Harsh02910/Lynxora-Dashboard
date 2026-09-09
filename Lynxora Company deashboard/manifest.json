@@ -1,0 +1,28 @@
+﻿{
+  "name": "Lynxora Financial Suite",
+  "short_name": "Lynxora",
+  "description": "Company Profit & Loss Dashboard — Income, Expenses, Final Accounts & Analytics",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#180a2a",
+  "theme_color": "#e06d53",
+  "lang": "en",
+  "categories": ["finance", "business", "productivity"],
+  "icons": [
+    { "src": "logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "logo.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Record",
+      "short_name": "Add",
+      "description": "Quickly add a new financial record",
+      "url": "./index.html",
+      "icons": [{ "src": "logo.png", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false
+}
