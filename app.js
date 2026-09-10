@@ -2950,13 +2950,23 @@ function disconnectCloudSync() {
 }
 
 function getActiveSyncRoomId() {
-  return localStorage.getItem('lynxora_sync_room') || 'lynxora-main';
+  const room = localStorage.getItem('lynxora_sync_room');
+  if (room && typeof room === 'string' && room.trim() && room.trim() !== 'undefined' && room.trim() !== 'null') {
+    return room.trim();
+  }
+  return 'lynxora-main';
 }
 
 function updateSyncPillStatus(state, text) {
   const pillIds = ['dashSyncPill', 'recordsSyncPill', 'invSyncPill'];
   const textIds = ['dashSyncText', 'recordsSyncText', 'invSyncText'];
   const dotIds  = ['dashSyncDot',  'recordsSyncDot',  'invSyncDot'];
+
+  // Clean text: strip any extra green dot emojis, corrupted bytes or bullet points
+  let cleanText = (text || '').replace(/^[\s🟢•\?\?ðŸŽ¯\u{1F7E0}-\u{1F7EB}]+/u, '').trim();
+  if (!cleanText) {
+    cleanText = state === 'live' ? 'Live Sync' : (state === 'syncing' ? 'Syncing...' : 'Local Mode');
+  }
 
   pillIds.forEach((pId, idx) => {
     const pill = document.getElementById(pId);
@@ -2966,22 +2976,22 @@ function updateSyncPillStatus(state, text) {
       pill.title = `Sync Status: ${state.toUpperCase()} • Room: ${getActiveSyncRoomId()} (Click to force refresh)`;
     }
     if (txt) {
-      txt.textContent = text;
+      txt.textContent = cleanText;
     }
   });
 
   const badge = document.getElementById('cloudSyncBadge');
   if (badge) {
     if (state === 'live') {
-      badge.innerHTML = '🟢 Live Sync Active';
+      badge.innerHTML = '<span class="sync-status-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:6px;"></span>Live Sync Active';
       badge.style.background = '#d1fae5';
       badge.style.color = '#065f46';
     } else if (state === 'syncing') {
-      badge.innerHTML = '🔄 Syncing...';
+      badge.innerHTML = '<span class="sync-status-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:6px;"></span>Syncing...';
       badge.style.background = '#fef3c7';
       badge.style.color = '#92400e';
     } else {
-      badge.innerHTML = 'Local Mode';
+      badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:6px;"></span>Local Mode';
       badge.style.background = '#f1f5f9';
       badge.style.color = '#64748b';
     }
@@ -3197,7 +3207,7 @@ function broadcastToCloud(entityName = 'all', actionDesc = '', allowEmpty = fals
     .then(() => {
       isSyncPushInProgress = false;
       lastSuccessfulSyncTime = Date.now();
-      updateSyncPillStatus('live', '🟢 Live Sync');
+      updateSyncPillStatus('live', 'Live Sync');
     })
     .catch(err => {
       isSyncPushInProgress = false;
@@ -3230,12 +3240,14 @@ function applyCloudData(data, source = 'realtime') {
   // 1. Records
   const remoteRecords = Array.isArray(data.records) ? data.records : [];
   let merged;
+  const isCloudCleared = data.lastAction && data.lastAction.toLowerCase().includes('clear');
   if (remoteRecords.length === 0 && Array.isArray(data.records)) {
     // Cloud room has 0 records (cleared or empty): purge records
-    const allDel = new Set((deletedRecordIds || []).map(String));
-    merged = records.filter(r => r && r.id != null && !allDel.has(String(r.id)));
-    if (data.lastAction && data.lastAction.toLowerCase().includes('clear')) {
+    if (isCloudCleared) {
       merged = [];
+    } else {
+      const allDel = new Set((deletedRecordIds || []).map(String));
+      merged = records.filter(r => r && r.id != null && !allDel.has(String(r.id)));
     }
   } else {
     merged = mergeRecords(records, remoteRecords, data.deletedRecordIds);
@@ -3245,6 +3257,10 @@ function applyCloudData(data, source = 'realtime') {
     localStorage.setItem('lynxora_records', JSON.stringify(records));
     hasChanges = true;
     changeList.push('Transactions');
+  }
+  // Upstream sync: if this client has local records that the cloud does not yet have, push them automatically
+  if (!isCloudCleared && merged.length > remoteRecords.length) {
+    setTimeout(() => broadcastToCloud('records', 'Synced local transactions to cloud', false), 800);
   }
 
   // 2. Inventory Items
@@ -3256,6 +3272,9 @@ function applyCloudData(data, source = 'realtime') {
     hasChanges = true;
     changeList.push('Inventory');
   }
+  if (mergedInv.length > remoteInventory.length) {
+    setTimeout(() => broadcastToCloud('inventory', 'Synced local inventory to cloud', false), 1000);
+  }
 
   // 3. Stock Movements
   const remoteMovements = Array.isArray(data.stockMovements) ? data.stockMovements : [];
@@ -3265,6 +3284,9 @@ function applyCloudData(data, source = 'realtime') {
     localStorage.setItem('lynxora_stock_movements', JSON.stringify(stockMovements));
     hasChanges = true;
     changeList.push('Stock Movements');
+  }
+  if (mergedMv.length > remoteMovements.length) {
+    setTimeout(() => broadcastToCloud('stockMovements', 'Synced local stock movements to cloud', false), 1200);
   }
 
   // 4. Invoices
@@ -3276,6 +3298,9 @@ function applyCloudData(data, source = 'realtime') {
     hasChanges = true;
     changeList.push('Invoices');
   }
+  if (mergedInvoices.length > remoteInvoices.length) {
+    setTimeout(() => broadcastToCloud('invoices', 'Synced local invoices to cloud', false), 1400);
+  }
 
   // 5. Users
   if (Array.isArray(data.users)) {
@@ -3286,6 +3311,9 @@ function applyCloudData(data, source = 'realtime') {
       renderUserAccounts();
       hasChanges = true;
       changeList.push('Users');
+    }
+    if (mergedUsers.length > data.users.length) {
+      setTimeout(() => broadcastToCloud('users', 'Synced local users to cloud', false), 1600);
     }
   }
 
@@ -3347,14 +3375,14 @@ function applyCloudData(data, source = 'realtime') {
     populateInventoryCategoryDropdowns();
     refreshAllActiveViews();
     lastSuccessfulSyncTime = Date.now();
-    updateSyncPillStatus('live', '🟢 Live Sync');
+    updateSyncPillStatus('live', 'Live Sync');
     const author = data.lastUpdatedBy ? ` from ${data.lastUpdatedBy}` : '';
     const desc = data.lastAction ? `: ${data.lastAction}` : '';
     if (source !== 'login' && hasChanges) {
-      showToast(`🔄 Live Sync${author}${desc}!`, 'info');
+      showToast(`Live Sync${author}${desc}!`, 'info');
     }
   } else {
-    updateSyncPillStatus('live', '🟢 Live Sync');
+    updateSyncPillStatus('live', 'Live Sync');
   }
 
   setTimeout(() => { 
@@ -3416,13 +3444,21 @@ function manualSyncNow() {
   firestoreDb.collection('lynxora_rooms').doc(roomId).get({ source: 'server' })
     .then(doc => {
       if (doc.exists) {
-        applyCloudData(doc.data(), 'manual');
-        showToast('✅ Cloud Sync complete! All records & transactions are up to date.', 'success');
+        const cloudData = doc.data() || {};
+        applyCloudData(cloudData, 'manual');
+        const cloudRecs = Array.isArray(cloudData.records) ? cloudData.records : [];
+        const cloudInv = Array.isArray(cloudData.inventory) ? cloudData.inventory : [];
+        if (records.length > cloudRecs.length || inventoryItems.length > cloudInv.length) {
+          broadcastToCloud('all', 'Uploaded local records to cloud workspace', false);
+          showToast('✅ Uploaded and synced your local records to Cloud!', 'success');
+        } else {
+          showToast('✅ Cloud Sync complete! All records & transactions are up to date.', 'success');
+        }
       } else {
         broadcastToCloud('all', 'Initial sync upload');
         showToast('✅ Cloud workspace initialized and synced!', 'success');
       }
-      updateSyncPillStatus('live', '🟢 Live Sync');
+      updateSyncPillStatus('live', 'Live Sync');
     })
     .catch(err => {
       console.warn('Manual sync failed:', err);
@@ -3450,38 +3486,48 @@ function copyEmployeeInviteLink() {
 function initCloudSync() {
   const urlParams = new URLSearchParams(window.location.search);
   const roomParam = urlParams.get('room');
-  if (roomParam) {
+  if (roomParam && roomParam.trim() && roomParam.trim() !== 'undefined' && roomParam.trim() !== 'null') {
     localStorage.setItem('lynxora_sync_room', roomParam.trim());
   }
 
+  const DEFAULT_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBjv01VpcYExqp0AmhoN6HA9EbJJGIA6pU",
+    authDomain: "lynxora-company-deashboard.firebaseapp.com",
+    projectId: "lynxora-company-deashboard",
+    storageBucket: "lynxora-company-deashboard.firebasestorage.app",
+    messagingSenderId: "447232907792",
+    appId: "1:447232907792:web:6b777defd5c46cdf2c0895",
+    measurementId: "G-32BE7H8EH9"
+  };
+
   let savedConfig = localStorage.getItem('lynxora_firebase_config');
-  if (!savedConfig) {
-    savedConfig = JSON.stringify({
-      apiKey: "AIzaSyBjv01VpcYExqp0AmhoN6HA9EbJJGIA6pU",
-      authDomain: "lynxora-company-deashboard.firebaseapp.com",
-      projectId: "lynxora-company-deashboard",
-      storageBucket: "lynxora-company-deashboard.firebasestorage.app",
-      messagingSenderId: "447232907792",
-      appId: "1:447232907792:web:6b777defd5c46cdf2c0895",
-      measurementId: "G-32BE7H8EH9"
-    });
-    localStorage.setItem('lynxora_firebase_config', savedConfig);
+  let configToUse = null;
+  if (savedConfig) {
+    try {
+      const parsed = JSON.parse(savedConfig);
+      if (parsed && parsed.apiKey && parsed.projectId) {
+        configToUse = parsed;
+      }
+    } catch (e) {}
+  }
+  if (!configToUse) {
+    configToUse = DEFAULT_FIREBASE_CONFIG;
+    localStorage.setItem('lynxora_firebase_config', JSON.stringify(DEFAULT_FIREBASE_CONFIG));
   }
   const roomId = getActiveSyncRoomId();
 
-  if (!savedConfig || typeof firebase === 'undefined') {
+  if (typeof firebase === 'undefined') {
     updateSyncPillStatus('offline', 'Local Mode');
     return;
   }
 
   try {
-    const config = JSON.parse(savedConfig);
     if (!firebase.apps.length) {
-      firebase.initializeApp(config);
+      firebase.initializeApp(configToUse);
     }
     firestoreDb = firebase.firestore();
 
-    updateSyncPillStatus('live', '🟢 Live Sync');
+    updateSyncPillStatus('live', 'Live Sync');
 
     // 1. Listen to real-time room changes via onSnapshot
     if (cloudUnsubscribe) cloudUnsubscribe();

@@ -2435,6 +2435,16 @@ body {
   flex-shrink: 0;
 }
 
+.sync-status-icon {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
 .cloud-sync-status-pill.syncing {
   background: #fefce8;
   border-color: #fde047;
