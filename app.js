@@ -6271,7 +6271,7 @@ function setAmzCalcMode(mode) {
       modeBadge.textContent = 'Direct Entry Mode';
       modeBadge.style.background = '#2563eb';
     }
-    if (profitTitle) profitTitle.innerHTML = '🎯 Resulting Profit Margin (% of SP)';
+    if (profitTitle) profitTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;display:inline-block;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Resulting Profit Margin (% of SP)';
     if (profitContainer) {
       profitContainer.style.background = '#f8fafc';
       profitContainer.style.borderColor = '#cbd5e1';
@@ -6305,7 +6305,7 @@ function setAmzCalcMode(mode) {
       modeBadge.textContent = 'Auto-Calculated';
       modeBadge.style.background = '#64748b';
     }
-    if (profitTitle) profitTitle.innerHTML = '🎯 10. Desired Profit Margin (% of Selling Price)';
+    if (profitTitle) profitTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;display:inline-block;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>10. Desired Profit Margin (% of Selling Price)';
     if (profitContainer) {
       profitContainer.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
       profitContainer.style.borderColor = '#86efac';
@@ -7445,7 +7445,7 @@ function setFkCalcMode(mode) {
       profitContainer.style.borderColor = '#cbd5e1';
     }
     if (profitTitle) {
-      profitTitle.innerHTML = '&#127919; 11. Calculated Profit Margin (% of SP)';
+      profitTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;display:inline-block;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>11. Calculated Profit Margin (% of SP)';
     }
     if (bdLabel) {
       bdLabel.textContent = 'Direct Target Selling Price (SP)';
@@ -7486,7 +7486,7 @@ function setFkCalcMode(mode) {
       profitContainer.style.borderColor = '#86efac';
     }
     if (profitTitle) {
-      profitTitle.innerHTML = '&#127919; 11. Desired Profit Margin (% of Selling Price)';
+      profitTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;display:inline-block;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>11. Desired Profit Margin (% of Selling Price)';
     }
     if (bdLabel) {
       bdLabel.textContent = 'Recommended Final Selling Price (SP)';
