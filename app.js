@@ -3149,10 +3149,8 @@ function mergeInventory(localList, remoteList, remoteDeletedIds = []) {
     if (!i) return true;
     const idStr = i.id != null ? String(i.id).trim().toLowerCase() : '';
     const skuStr = i.sku ? String(i.sku).trim().toLowerCase() : '';
-    const nameStr = i.name ? String(i.name).trim().toLowerCase() : '';
     if (idStr && allDeleted.has(idStr)) return true;
     if (skuStr && allDeleted.has(skuStr)) return true;
-    if (nameStr && allDeleted.has(nameStr)) return true;
     return false;
   };
 
@@ -4849,6 +4847,7 @@ function handleGenerateInvoiceSubmit(event) {
       const prod = (inventoryItems || []).find(p => (it.productId && String(p.id) === String(it.productId)) || (it.sku && p.sku === it.sku));
       if (prod) {
         prod.quantity = Math.max(0, (Number(prod.quantity) || 0) - it.qty);
+        prod.updatedAt = Date.now();
         inventoryModified = true;
 
         stockMovements.unshift({
@@ -5244,6 +5243,7 @@ function deleteStockMovement(movementId) {
         } else if (m.type === 'IN') {
           prod.quantity = Math.max(0, (Number(prod.quantity) || 0) - Number(m.qty || 0));
         }
+        prod.updatedAt = Date.now();
         saveInventory();
       }
 
@@ -5333,10 +5333,8 @@ function loadInventory() {
         if (!i) return false;
         const idStr = String(i.id).trim().toLowerCase();
         const skuStr = i.sku ? String(i.sku).trim().toLowerCase() : '';
-        const nameStr = i.name ? String(i.name).trim().toLowerCase() : '';
         if (delSet.has(idStr)) return false;
         if (skuStr && delSet.has(skuStr)) return false;
-        if (nameStr && delSet.has(nameStr)) return false;
         return true;
       });
     } catch {
@@ -5989,8 +5987,8 @@ function updateDashboardInventoryOverview() {
       <td style="font-weight:800;color:#059669;">${formatCurrency(totalVal)}</td>
       <td>${statusHtml}</td>
       <td>
-        <button class="stock-action-btn" onclick="openStockAdjustModal(${item.id})" style="padding:3px 8px;font-size:11px;" title="Quick Restock / Stock Out">
-          <span>&plusmn; Adjust</span>
+        <button class="stock-action-btn" onclick="openStockAdjustModal('${escapeHtml(String(item.id))}', 'IN')" style="padding:3px 8px;font-size:11px;" title="Quick Restock / Add Stock">
+          <span>+ Restock</span>
         </button>
       </td>
     </tr>`;
@@ -6153,6 +6151,8 @@ function handleInventoryFormSubmit(e) {
   const autoSku = 'SKU-' + (1001 + (maxNumId > 0 ? maxNumId : inventoryItems.length));
   const finalSku = sku || autoSku;
 
+  const trimmedNameLower = name.trim().toLowerCase();
+
   if (editingInvId) {
     const idx = inventoryItems.findIndex(i => String(i.id) === String(editingInvId) || (i.sku && i.sku === String(editingInvId)));
     if (idx !== -1) {
@@ -6162,18 +6162,69 @@ function handleInventoryFormSubmit(e) {
   } else {
     const newId = maxNumId > 0 ? maxNumId + 1 : Date.now();
     const sNewId = String(newId);
-    if (deletedInventoryIds.includes(sNewId) || deletedInventoryIds.includes(finalSku)) {
-      deletedInventoryIds = deletedInventoryIds.filter(d => d !== sNewId && d !== finalSku);
-      saveDeletedInventoryIds();
+
+    // Prune any existing tombstones matching this new ID, SKU, or name
+    deletedInventoryIds = (deletedInventoryIds || []).filter(d => {
+      const s = String(d).trim().toLowerCase();
+      return s !== sNewId.toLowerCase() && s !== finalSku.toLowerCase() && s !== trimmedNameLower;
+    });
+    saveDeletedInventoryIds();
+
+    const newProd = {
+      id: newId,
+      sku: finalSku,
+      name,
+      category,
+      supplier,
+      costPrice,
+      sellingPrice,
+      quantity,
+      minStock,
+      updatedAt: Date.now()
+    };
+    inventoryItems.unshift(newProd);
+
+    // If initial stock was provided, log an initial stock movement
+    if (quantity > 0) {
+      stockMovements.unshift({
+        id: Date.now(),
+        date: new Date().toLocaleString(),
+        type: 'IN',
+        productId: newId,
+        productName: name,
+        sku: finalSku,
+        qty: quantity,
+        unitRate: costPrice,
+        totalAmount: quantity * costPrice,
+        reason: 'Initial Opening Stock',
+        reflectedInFinance: false,
+        recordId: null
+      });
+      saveStockMovements();
     }
-    inventoryItems.push({ id: newId, sku: finalSku, name, category, supplier, costPrice, sellingPrice, quantity, minStock, updatedAt: Date.now() });
-    showToast('Product added to inventory! ✓', 'success');
+
+    showToast(`Product "${name}" added to inventory with ${quantity} units! ✓`, 'success');
   }
 
-  saveInventory();
+  saveInventory('Added or updated product: ' + name);
   closeInventoryModal();
+
+  // Reset pagination & filters so new product is instantly visible
+  invCurrentPage = 1;
+  invSearchQuery = '';
+  invCategoryFilter = 'All';
+  invStatusFilter = 'All';
+  const catFilterEl = document.getElementById('invCategoryFilter');
+  if (catFilterEl) catFilterEl.value = 'All';
+  const statusFilterEl = document.getElementById('invStatusFilter');
+  if (statusFilterEl) statusFilterEl.value = 'All';
+  const searchInputEl = document.getElementById('invSearchInput');
+  if (searchInputEl) searchInputEl.value = '';
+
   renderInventory();
   renderStockMovementsTable();
+  updateDashboardInventoryOverview();
+  updateDashboard();
 }
 
 function closeStockAdjustModal() {
@@ -6186,26 +6237,26 @@ function closeStockAdjustModal() {
 }
 
 function syncAdjustProductHeader() {
-  const item = adjustingInvId ? inventoryItems.find(i => String(i.id) === String(adjustingInvId) || (i.sku && i.sku === String(adjustingInvId))) : null;
+  const targetId = adjustingInvId ? String(adjustingInvId).trim() : '';
+  const item = targetId ? inventoryItems.find(i => i && (String(i.id).trim() === targetId || (i.sku && String(i.sku).trim() === targetId))) : null;
   if (!item) return;
 
   setText('adjustProdName', item.name);
   setText('adjustProdSku', item.sku || 'SKU');
-  setText('adjustCurrentStock', item.quantity.toString());
+  setText('adjustCurrentStock', (item.quantity || 0).toString());
   setText('adjustCostPriceDisplay', formatCurrency(item.costPrice || 0));
   setText('adjustSellPriceDisplay', formatCurrency(item.sellingPrice || 0));
 }
 
 function onAdjustProductChanged(newId) {
-  const parsedId = parseInt(newId);
-  if (!parsedId) return;
-  adjustingInvId = parsedId;
+  if (newId == null || String(newId).trim() === '') return;
+  adjustingInvId = String(newId).trim();
   syncAdjustProductHeader();
-  const op = document.getElementById('adjustOpType')?.value || 'SALE';
+  const op = document.getElementById('adjustOpType')?.value || 'IN';
   setStockOpType(op);
 }
 
-function openStockAdjustModal(id = null, defaultOp = 'SALE') {
+function openStockAdjustModal(id = null, defaultOp = 'IN') {
   if (!inventoryItems || inventoryItems.length === 0) {
     showToast('Your inventory catalogue is currently empty. Please add a product first!', 'info');
     navigateTo('inventory');
@@ -6221,20 +6272,20 @@ function openStockAdjustModal(id = null, defaultOp = 'SALE') {
   const prodSelect = document.getElementById('adjustProductSelect');
   if (prodSelect) {
     prodSelect.innerHTML = inventoryItems.map(item => {
-      return `<option value="${item.id}">${escapeHtml(item.name)} (${escapeHtml(item.sku || 'SKU')}) — Stock: ${item.quantity} | Sell: ${formatCurrency(item.sellingPrice || 0)}</option>`;
+      const sId = String(item.id);
+      return `<option value="${escapeHtml(sId)}">${escapeHtml(item.name)} (${escapeHtml(item.sku || 'SKU')}) — Stock: ${item.quantity || 0} | Sell: ${formatCurrency(item.sellingPrice || 0)}</option>`;
     }).join('');
   }
 
-  if (id) {
-    adjustingInvId = parseInt(id);
-    if (prodSelect) prodSelect.value = id;
+  if (id != null && String(id).trim() !== '') {
+    adjustingInvId = String(id).trim();
   } else {
-    adjustingInvId = inventoryItems[0].id;
-    if (prodSelect) prodSelect.value = adjustingInvId;
+    adjustingInvId = String(inventoryItems[0].id).trim();
   }
+  if (prodSelect) prodSelect.value = adjustingInvId;
 
   syncAdjustProductHeader();
-  setStockOpType(defaultOp);
+  setStockOpType(defaultOp || 'IN');
 
   // Reset invoice section
   const invChk = document.getElementById('generateTaxInvoiceCheck');
@@ -6264,7 +6315,8 @@ function setStockOpType(op) {
   const opInput = document.getElementById('adjustOpType');
   if (opInput) opInput.value = op;
 
-  const item = adjustingInvId ? inventoryItems.find(i => i.id === adjustingInvId) : null;
+  const targetId = adjustingInvId ? String(adjustingInvId).trim() : '';
+  const item = targetId ? inventoryItems.find(i => i && (String(i.id).trim() === targetId || (i.sku && String(i.sku).trim() === targetId))) : null;
   const cost = item ? (item.costPrice || 0) : 0;
   const sell = item ? (item.sellingPrice || 0) : 0;
 
@@ -6397,10 +6449,14 @@ function recalcStockFinancialImpact() {
 }
 
 function handleStockAdjustSubmit(e) {
-  e.preventDefault();
+  if (e && e.preventDefault) e.preventDefault();
   if (!adjustingInvId) return;
-  const item = inventoryItems.find(i => i.id === adjustingInvId);
-  if (!item) return;
+  const targetId = String(adjustingInvId).trim();
+  const item = inventoryItems.find(i => i && (String(i.id).trim() === targetId || (i.sku && String(i.sku).trim() === targetId)));
+  if (!item) {
+    showToast('Product not found in inventory catalogue.', 'error');
+    return;
+  }
 
   const op = document.getElementById('adjustOpType')?.value || 'SALE';
   const qty = parseInt(document.getElementById('adjustQuantity')?.value) || 0;
@@ -6452,7 +6508,8 @@ function handleStockAdjustSubmit(e) {
   let generatedInvoiceId = null;
 
   if (op === 'SALE') {
-    item.quantity -= qty;
+    item.quantity = Math.max(0, (item.quantity || 0) - qty);
+    item.updatedAt = Date.now();
 
     if (reflectFinance && totalAmount > 0) {
       transactionRecordId = Date.now();
@@ -6573,7 +6630,8 @@ function handleStockAdjustSubmit(e) {
     showToast(`Sold ${qty}x ${item.name}! ${reflectFinance ? formatCurrency(totalAmount) + ' added to Sales Revenue & Dashboard!' : ''}`, 'success');
 
   } else if (op === 'LOSS') {
-    item.quantity -= qty;
+    item.quantity = Math.max(0, (item.quantity || 0) - qty);
+    item.updatedAt = Date.now();
 
     if (reflectFinance && totalAmount > 0) {
       transactionRecordId = Date.now();
@@ -6611,7 +6669,8 @@ function handleStockAdjustSubmit(e) {
 
   } else {
     // RESTOCK (IN)
-    item.quantity += qty;
+    item.quantity = (item.quantity || 0) + qty;
+    item.updatedAt = Date.now();
 
     if (reflectFinance && totalAmount > 0) {
       transactionRecordId = Date.now();
@@ -6647,12 +6706,13 @@ function handleStockAdjustSubmit(e) {
     showToast(`Restocked +${qty} units of ${item.name}!`, 'success');
   }
 
-  saveInventory();
+  saveInventory('Stock adjusted: ' + op + ' ' + qty + ' units of ' + item.name);
   closeStockAdjustModal();
   updateDashboard();
   renderInventory();
   renderStockMovementsTable();
   renderRecordsTable();
+  updateDashboardInventoryOverview();
 
   if (generatedInvoiceId) {
     setTimeout(() => {
@@ -6706,7 +6766,7 @@ function deleteInventoryProduct(id) {
     actionClass: 'btn-danger',
     cancelText: '✕ Cancel / Keep',
     onConfirm: () => {
-      const actualId = item.id != null ? String(item.id) : '';
+      const actualId = item.id != null ? String(item.id).trim() : '';
       const actualSku = item.sku ? String(item.sku).trim() : '';
       const actualName = item.name ? String(item.name).trim() : '';
 
@@ -6715,9 +6775,6 @@ function deleteInventoryProduct(id) {
       }
       if (actualSku && !deletedInventoryIds.includes(actualSku)) {
         deletedInventoryIds.push(actualSku);
-      }
-      if (actualName && !deletedInventoryIds.includes(actualName)) {
-        deletedInventoryIds.push(actualName);
       }
       saveDeletedInventoryIds();
 
@@ -6772,16 +6829,12 @@ function promptClearAllInventory() {
       inventoryItems.forEach(i => {
         if (i) {
           if (i.id != null) {
-            const sId = String(i.id);
+            const sId = String(i.id).trim();
             if (!deletedInventoryIds.includes(sId)) deletedInventoryIds.push(sId);
           }
           if (i.sku) {
             const sSku = String(i.sku).trim();
             if (!deletedInventoryIds.includes(sSku)) deletedInventoryIds.push(sSku);
-          }
-          if (i.name) {
-            const sName = String(i.name).trim();
-            if (!deletedInventoryIds.includes(sName)) deletedInventoryIds.push(sName);
           }
         }
       });

@@ -39,7 +39,7 @@
   <!-- HTML2PDF for Direct Tax Invoice PDF Generation & Download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=25.2">
+  <link rel="stylesheet" href="style.css?v=26.0">
   <script>
     (function() {
       // 1. Force flush obsolete caches if version updated
@@ -413,9 +413,12 @@
             </h3>
             <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Real-time stock valuation integrated with company profit &amp; loss statements</p>
           </div>
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn btn-ghost" onclick="openInventoryModal()" style="font-size: 12.5px; padding: 7px 14px;">
               <span>+ Add Product</span>
+            </button>
+            <button type="button" class="btn btn-ghost" onclick="openStockAdjustModal(null, 'IN')" style="font-size: 12.5px; padding: 7px 14px; color: #2563eb; border-color: rgba(37,99,235,0.3); font-weight: 700;" title="Add Stock / Restock Product">
+              <span>+ Restock</span>
             </button>
             <button type="button" class="btn btn-primary" onclick="navigateTo('inventory')" style="font-size: 12.5px; padding: 7px 16px;">
               <span>Manage Full Inventory &rarr;</span>
@@ -781,6 +784,10 @@
           <button class="btn btn-primary" onclick="openInventoryModal()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             <span>Add Product</span>
+          </button>
+          <button type="button" class="btn btn-ghost" onclick="openStockAdjustModal(null, 'IN')" style="font-weight:700;display:inline-flex;align-items:center;gap:6px;border:1.5px solid rgba(37,99,235,0.3);color:#2563eb;padding:10px 16px;border-radius:8px;cursor:pointer;transition:all 0.2s;" title="Restock / Add Stock to Existing Product">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <span>Restock</span>
           </button>
           <button type="button" class="btn" onclick="openGenerateInvoiceModal()" style="background:#2563eb;color:white;font-weight:700;display:inline-flex;align-items:center;gap:6px;border:none;border-radius:8px;padding:10px 16px;cursor:pointer;box-shadow:0 2px 8px rgba(37,99,235,0.25);" title="Generate New GST Tax Invoice">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -3561,7 +3568,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=25.2" defer></script>
+  <script src="app.js?v=26.0" defer></script>
 
   <!-- MOBILE BOTTOM NAVIGATION BAR -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav">
@@ -3652,7 +3659,7 @@
         }
       });
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js?v=25.2')
+        navigator.serviceWorker.register('./sw.js?v=26.0')
           .then(reg => {
             console.log('[Lynxora] SW registered:', reg.scope);
             reg.update();
