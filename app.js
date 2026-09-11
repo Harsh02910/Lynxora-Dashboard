@@ -2353,8 +2353,12 @@ function closeConfirmModal() {
 }
 
 function deleteRecord(id) {
-  const r = records.find(item => item.id === id);
-  if (!r) return;
+  const recIdStr = String(id);
+  const r = records.find(item => String(item.id) === recIdStr);
+  if (!r) {
+    showToast('Transaction not found or already deleted.', 'info');
+    return;
+  }
 
   const canDelete = currentUser && currentUser.role !== 'viewer';
   if (!canDelete) {
@@ -2407,9 +2411,9 @@ function deleteRecord(id) {
     actionClass: 'btn-danger',
     cancelText: '✕ Cancel / Keep',
     onConfirm: () => {
-      records = records.filter(item => item.id !== id);
-      if (!deletedRecordIds.includes(id)) {
-        deletedRecordIds.push(id);
+      records = records.filter(item => String(item.id) !== recIdStr);
+      if (!deletedRecordIds.includes(recIdStr)) {
+        deletedRecordIds.push(recIdStr);
         saveDeletedRecordIds();
       }
       saveRecords('Deleted financial transaction', true);
@@ -3052,6 +3056,18 @@ function saveDeletedInvoiceIds() {
 }
 loadDeletedInvoiceIds();
 
+let deletedInventoryIds = [];
+function loadDeletedInventoryIds() {
+  const saved = localStorage.getItem('lynxora_deleted_inventory_ids');
+  if (saved) {
+    try { deletedInventoryIds = JSON.parse(saved) || []; } catch { deletedInventoryIds = []; }
+  }
+}
+function saveDeletedInventoryIds() {
+  localStorage.setItem('lynxora_deleted_inventory_ids', JSON.stringify(deletedInventoryIds));
+}
+loadDeletedInventoryIds();
+
 function mergeRecords(localList, remoteList, remoteDeletedIds = []) {
   const allDeleted = new Set([...(deletedRecordIds || []), ...(remoteDeletedIds || [])].map(String));
   if (!Array.isArray(remoteList)) {
@@ -3086,13 +3102,23 @@ function mergeRecords(localList, remoteList, remoteDeletedIds = []) {
   return Array.from(map.values()).sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 }
 
-function mergeInventory(localList, remoteList) {
-  if (!Array.isArray(remoteList)) return Array.isArray(localList) ? localList : [];
-  if (!Array.isArray(localList) || localList.length === 0) return remoteList;
+function mergeInventory(localList, remoteList, remoteDeletedIds = []) {
+  const allDeleted = new Set([...(deletedInventoryIds || []), ...(remoteDeletedIds || [])].map(String));
+  if (!Array.isArray(remoteList)) {
+    const list = Array.isArray(localList) ? localList : [];
+    return list.filter(i => i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku))));
+  }
+  if (!Array.isArray(localList) || localList.length === 0) {
+    return remoteList.filter(i => i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku))));
+  }
   const map = new Map();
-  remoteList.forEach(i => { if (i && i.id != null) map.set(String(i.id), i); });
+  remoteList.forEach(i => {
+    if (i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku)))) {
+      map.set(String(i.id), i);
+    }
+  });
   localList.forEach(i => {
-    if (i && i.id != null) {
+    if (i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku)))) {
       if (!map.has(String(i.id))) {
         map.set(String(i.id), i);
       } else {
@@ -3196,7 +3222,7 @@ function broadcastToCloud(entityName = 'all', actionDesc = '', allowEmpty = fals
   // Prevent blank local array from wiping populated cloud collection unless explicitly requested
   if (!allowEmpty) {
     if (entityName === 'records' && records.length === 0) return;
-    if (entityName === 'inventory' && inventoryItems.length === 0) return;
+    if (entityName === 'inventory' && inventoryItems.length === 0 && deletedInventoryIds.length === 0) return;
     if (entityName === 'users' && companyUsers.length === 0) return;
     if (entityName === 'amazonPriceTracker' && trackedPricingList.length === 0) return;
     if (entityName === 'flipkartTracker' && trackedFlipkartList.length === 0) return;
@@ -3219,6 +3245,7 @@ function broadcastToCloud(entityName = 'all', actionDesc = '', allowEmpty = fals
   }
   if (entityName === 'inventory' || entityName === 'all') {
     payload.inventory = inventoryItems;
+    payload.deletedInventoryIds = deletedInventoryIds;
   }
   if (entityName === 'stockMovements' || entityName === 'all') {
     payload.stockMovements = stockMovements;
@@ -3314,6 +3341,19 @@ function applyCloudData(data, source = 'realtime') {
     if (invDelChanged) saveDeletedInvoiceIds();
   }
 
+  // 0d. Deleted Inventory Items
+  if (Array.isArray(data.deletedInventoryIds)) {
+    let invItemDelChanged = false;
+    data.deletedInventoryIds.forEach(id => {
+      const sId = String(id);
+      if (!deletedInventoryIds.includes(sId)) {
+        deletedInventoryIds.push(sId);
+        invItemDelChanged = true;
+      }
+    });
+    if (invItemDelChanged) saveDeletedInventoryIds();
+  }
+
   // 1. Records
   const remoteRecords = Array.isArray(data.records) ? data.records : [];
   let merged;
@@ -3342,7 +3382,7 @@ function applyCloudData(data, source = 'realtime') {
 
   // 2. Inventory Items
   const remoteInventory = Array.isArray(data.inventory) ? data.inventory : [];
-  const mergedInv = mergeInventory(inventoryItems, remoteInventory);
+  const mergedInv = mergeInventory(inventoryItems, remoteInventory, data.deletedInventoryIds);
   if (JSON.stringify(inventoryItems) !== JSON.stringify(mergedInv)) {
     inventoryItems = mergedInv;
     localStorage.setItem('lynxora_inventory', JSON.stringify(inventoryItems));
@@ -5224,7 +5264,8 @@ function loadInventory() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      inventoryItems = Array.isArray(parsed) ? parsed : [];
+      const delSet = new Set((deletedInventoryIds || []).map(String));
+      inventoryItems = (Array.isArray(parsed) ? parsed : []).filter(i => i && i.id != null && !delSet.has(String(i.id)) && (!i.sku || !delSet.has(String(i.sku))));
     } catch {
       inventoryItems = [];
     }
@@ -5239,11 +5280,11 @@ function loadInventory() {
   populateProductNameDropdown();
 }
 
-function saveInventory(actionDesc = '') {
+function saveInventory(actionDesc = '', allowEmpty = false) {
   localStorage.setItem('lynxora_inventory', JSON.stringify(inventoryItems));
   updateDashboardInventoryOverview();
   if (typeof broadcastToCloud === 'function') {
-    broadcastToCloud('inventory', actionDesc || (editingInvId ? 'Updated product details' : 'Updated inventory catalogue'));
+    broadcastToCloud('inventory', actionDesc || (editingInvId ? 'Updated product details' : 'Updated inventory catalogue'), allowEmpty);
   }
 }
 
@@ -5321,7 +5362,7 @@ function renderInventory() {
   if (emptyState) emptyState.style.display = 'none';
 
   const isViewer = currentUser && currentUser.role === 'viewer';
-  const canDelete = currentUser && (currentUser.role === 'owner' || currentUser.role === 'partner');
+  const canDelete = !currentUser || currentUser.role !== 'viewer';
   const canEdit = currentUser && currentUser.role !== 'viewer';
 
   tbody.innerHTML = page.map(item => {
@@ -5332,6 +5373,7 @@ function renderInventory() {
     const marginAmt = sell - cost;
     const marginPct = cost > 0 ? ((marginAmt / cost) * 100).toFixed(0) : '0';
     const totalVal = qty * cost;
+    const itemIdStr = escapeHtml(String(item.id));
 
     let statusHtml = '';
     if (qty === 0) {
@@ -5348,7 +5390,7 @@ function renderInventory() {
 
     return `<tr>
       <td data-label="SKU"><span class="inv-sku-badge">${escapeHtml(item.sku || 'SKU')}</span></td>
-      <td data-label="Product"><b class="inv-product-name-link" onclick="openInventoryModal(${item.id})" title="Click to edit product details">${escapeHtml(item.name)}</b></td>
+      <td data-label="Product"><b class="inv-product-name-link" onclick="openInventoryModal('${itemIdStr}')" title="Click to edit product details">${escapeHtml(item.name)}</b></td>
       <td data-label="Category"><span class="badge badge-transfer" style="font-size:11px;">${escapeHtml(item.category || 'Product')}</span></td>
       <td data-label="Supplier">${supplierBadge}</td>
       <td data-label="Cost Price" style="font-weight:600;color:#64748b;">${formatCurrency(cost)}</td>
@@ -5357,14 +5399,17 @@ function renderInventory() {
       <td data-label="Stock">${statusHtml}</td>
       <td data-label="Valuation" style="font-weight:800;color:#059669;">${formatCurrency(totalVal)}</td>
       <td data-label="Actions" style="white-space:nowrap;">
-        <div class="inv-action-cell">
-          <button type="button" class="inv-sell-btn" onclick="openStockAdjustModal(${item.id}, 'SALE')" title="Record Customer Sale &amp; Generate Invoice" style="display:inline-flex;align-items:center;gap:4px;">
+        <div class="inv-action-cell" style="display:flex;align-items:center;gap:6px;">
+          <button type="button" class="inv-sell-btn" onclick="openStockAdjustModal('${itemIdStr}', 'SALE')" title="Record Customer Sale &amp; Generate Invoice" style="display:inline-flex;align-items:center;gap:4px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             <span>Sell</span>
           </button>
           ${!isViewer ? `
-          <button type="button" class="inv-action-dots-btn" onclick="openProductActionMenu(event, ${item.id})" title="More Actions (Edit, Loss, Restock, Delete)">
+          <button type="button" class="inv-action-dots-btn" onclick="openProductActionMenu(event, '${itemIdStr}')" title="More Actions (Edit, Loss, Restock, Delete)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg>
+          </button>
+          <button type="button" class="action-btn action-delete" onclick="deleteInventoryProduct('${itemIdStr}')" title="Delete Product from Inventory" style="width:32px;height:32px;border-radius:8px;border:1px solid #fee2e2;background:#fef2f2;color:#dc2626;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s ease;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>` : ''}
         </div>
       </td>
@@ -5381,34 +5426,35 @@ function renderInventory() {
 // ══════════════════════════════════════════════════
 function openProductActionMenu(event, productId) {
   event.stopPropagation();
-  const item = inventoryItems.find(p => p.id === productId);
+  const prodIdStr = String(productId);
+  const item = inventoryItems.find(p => String(p.id) === prodIdStr || (p.sku && p.sku === prodIdStr));
   if (!item) return;
 
   const menu = document.getElementById('productActionFloatingMenu');
   if (!menu) return;
 
   // Toggle if already open on same product
-  if (menu.classList.contains('active') && menu.dataset.activeProductId == productId) {
+  if (menu.classList.contains('active') && menu.dataset.activeProductId === prodIdStr) {
     closeProductActionMenu();
     return;
   }
 
-  const canDelete = currentUser && (currentUser.role === 'owner' || currentUser.role === 'partner');
+  const canDelete = !currentUser || currentUser.role !== 'viewer';
 
-  menu.dataset.activeProductId = productId;
+  menu.dataset.activeProductId = prodIdStr;
   menu.innerHTML = `
-    <button type="button" onclick="closeProductActionMenu(); openInventoryModal(${item.id})" style="display:flex;align-items:center;gap:8px;">
+    <button type="button" onclick="closeProductActionMenu(); openInventoryModal('${escapeHtml(prodIdStr)}')" style="display:flex;align-items:center;gap:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Edit Product Details
     </button>
-    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal(${item.id}, 'IN')" style="display:flex;align-items:center;gap:8px;">
+    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal('${escapeHtml(prodIdStr)}', 'IN')" style="display:flex;align-items:center;gap:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Restock / Adjust (&plusmn;)
     </button>
-    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal(${item.id}, 'LOSS')" style="display:flex;align-items:center;gap:8px;">
+    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal('${escapeHtml(prodIdStr)}', 'LOSS')" style="display:flex;align-items:center;gap:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Record Stock Loss / Damage
     </button>
     ${canDelete ? `
     <div class="product-action-divider"></div>
-    <button type="button" class="menu-danger" onclick="closeProductActionMenu(); deleteInventoryProduct(${item.id})" style="display:flex;align-items:center;gap:8px;">
+    <button type="button" class="menu-danger" onclick="closeProductActionMenu(); deleteInventoryProduct('${escapeHtml(prodIdStr)}')" style="display:flex;align-items:center;gap:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete Product
     </button>` : ''}
   `;
@@ -5914,7 +5960,11 @@ function handleInventoryFilter() {
 }
 
 function generateAutoSku() {
-  const nextNum = inventoryItems.length > 0 ? Math.max(...inventoryItems.map(i => i.id)) + 1 : 1;
+  const maxNumId = inventoryItems.reduce((max, i) => {
+    const n = Number(i.id);
+    return !isNaN(n) && n > max ? n : max;
+  }, 0);
+  const nextNum = maxNumId > 0 ? maxNumId + 1 : (inventoryItems.length + 1);
   const sku = `SKU-${1000 + nextNum}`;
   const skuInput = document.getElementById('invSku');
   if (skuInput) skuInput.value = sku;
@@ -5931,10 +5981,11 @@ function calculateInvMarginPreview() {
 }
 
 function openInventoryModal(id = null) {
-  editingInvId = id;
+  editingInvId = id ? String(id) : null;
   const overlay = document.getElementById('inventoryModalOverlay');
   const title = document.getElementById('invModalTitle');
   const submitBtn = document.getElementById('invSubmitBtn');
+  const deleteBtn = document.getElementById('invModalDeleteBtn');
   const form = document.getElementById('inventoryForm');
 
   if (!overlay || !form) return;
@@ -5944,10 +5995,11 @@ function openInventoryModal(id = null) {
   populateInventoryCategoryDropdowns();
   populateSupplierDropdown();
 
-  if (id) {
+  if (editingInvId) {
     title.textContent = 'Edit Product';
     submitBtn.textContent = 'Save Changes';
-    const item = inventoryItems.find(i => i.id === id);
+    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+    const item = inventoryItems.find(i => String(i.id) === editingInvId || (i.sku && i.sku === editingInvId));
     if (item) {
       document.getElementById('invSku').value = item.sku || '';
       document.getElementById('invName').value = item.name || '';
@@ -5962,6 +6014,7 @@ function openInventoryModal(id = null) {
   } else {
     title.textContent = 'Add New Product';
     submitBtn.textContent = 'Add Product';
+    if (deleteBtn) deleteBtn.style.display = 'none';
     document.getElementById('invName').value = '';
     document.getElementById('invCategory').value = '';
     document.getElementById('invNewSupplier').value = '';
@@ -6020,18 +6073,27 @@ function handleInventoryFormSubmit(e) {
   const quantity = parseInt(document.getElementById('invQuantity')?.value) || 0;
   const minStock = parseInt(document.getElementById('invMinStock')?.value) || 10;
 
-  const autoSku = 'SKU-' + (inventoryItems.length > 0 ? Math.max(...inventoryItems.map(i => i.id)) + 1001 : 1001);
+  const maxNumId = inventoryItems.reduce((max, i) => {
+    const n = Number(i.id);
+    return !isNaN(n) && n > max ? n : max;
+  }, 0);
+  const autoSku = 'SKU-' + (1001 + (maxNumId > 0 ? maxNumId : inventoryItems.length));
   const finalSku = sku || autoSku;
 
   if (editingInvId) {
-    const idx = inventoryItems.findIndex(i => i.id === editingInvId);
+    const idx = inventoryItems.findIndex(i => String(i.id) === String(editingInvId) || (i.sku && i.sku === String(editingInvId)));
     if (idx !== -1) {
-      inventoryItems[idx] = { id: editingInvId, sku: finalSku, name, category, supplier, costPrice, sellingPrice, quantity, minStock };
+      inventoryItems[idx] = { ...inventoryItems[idx], id: inventoryItems[idx].id, sku: finalSku, name, category, supplier, costPrice, sellingPrice, quantity, minStock, updatedAt: Date.now() };
       showToast('Product updated successfully! ✓', 'success');
     }
   } else {
-    const newId = inventoryItems.length > 0 ? Math.max(...inventoryItems.map(i => i.id)) + 1 : 1;
-    inventoryItems.push({ id: newId, sku: finalSku, name, category, supplier, costPrice, sellingPrice, quantity, minStock });
+    const newId = maxNumId > 0 ? maxNumId + 1 : Date.now();
+    const sNewId = String(newId);
+    if (deletedInventoryIds.includes(sNewId) || deletedInventoryIds.includes(finalSku)) {
+      deletedInventoryIds = deletedInventoryIds.filter(d => d !== sNewId && d !== finalSku);
+      saveDeletedInventoryIds();
+    }
+    inventoryItems.push({ id: newId, sku: finalSku, name, category, supplier, costPrice, sellingPrice, quantity, minStock, updatedAt: Date.now() });
     showToast('Product added to inventory! ✓', 'success');
   }
 
@@ -6051,7 +6113,7 @@ function closeStockAdjustModal() {
 }
 
 function syncAdjustProductHeader() {
-  const item = adjustingInvId ? inventoryItems.find(i => i.id === adjustingInvId) : null;
+  const item = adjustingInvId ? inventoryItems.find(i => String(i.id) === String(adjustingInvId) || (i.sku && i.sku === String(adjustingInvId))) : null;
   if (!item) return;
 
   setText('adjustProdName', item.name);
@@ -6527,26 +6589,99 @@ function handleStockAdjustSubmit(e) {
 }
 
 function deleteInventoryProduct(id) {
-  const canDelete = currentUser && (currentUser.role === 'owner' || currentUser.role === 'partner');
+  const canDelete = !currentUser || currentUser.role !== 'viewer';
   if (!canDelete) {
-    showToast('Only Owner and Partner accounts can delete products.', 'error');
+    showToast('View-only accounts cannot delete products.', 'error');
     return;
   }
 
-  const item = inventoryItems.find(i => i.id === id);
-  if (!item) return;
+  const prodIdStr = String(id);
+  const item = inventoryItems.find(i => String(i.id) === prodIdStr || (i.sku && i.sku === prodIdStr));
+  if (!item) {
+    showToast('Product not found or already deleted.', 'info');
+    return;
+  }
+
+  const cost = Number(item.costPrice) || 0;
+  const sell = Number(item.sellingPrice) || 0;
+  const qty = Number(item.quantity) || 0;
+  const totalVal = cost * qty;
+
+  const detailsHtml = `
+    <div style="background:var(--input-bg);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;display:flex;flex-direction:column;gap:6px;">
+      <div class="confirm-preview-row"><span class="confirm-preview-label">Product Name:</span><span class="confirm-preview-val"><b>${escapeHtml(item.name)}</b></span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">SKU Code:</span><span class="confirm-preview-val"><span class="inv-sku-badge">${escapeHtml(item.sku || 'N/A')}</span></span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">Category:</span><span class="confirm-preview-val"><b>${escapeHtml(item.category || 'General')}</b></span></div>
+      ${item.supplier ? `<div class="confirm-preview-row"><span class="confirm-preview-label">Supplier:</span><span class="confirm-preview-val">${escapeHtml(item.supplier)}</span></div>` : ''}
+      <div class="confirm-preview-row"><span class="confirm-preview-label">Stock Quantity:</span><span class="confirm-preview-val" style="font-weight:700;color:${qty === 0 ? '#dc2626' : '#059669'};">${qty} In Stock</span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">Cost Price:</span><span class="confirm-preview-val">${formatCurrency(cost)}</span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">Selling Price:</span><span class="confirm-preview-val">${formatCurrency(sell)}</span></div>
+      <div class="confirm-preview-row" style="margin-top:4px;padding-top:8px;border-top:1.5px dashed var(--border);"><span class="confirm-preview-label">Stock Valuation:</span><span class="confirm-preview-val" style="color:#059669;font-weight:800;font-size:16px;">${formatCurrency(totalVal)}</span></div>
+    </div>
+  `;
 
   openConfirmModal({
     title: `Delete Product "${item.name}"?`,
-    message: `Are you sure you want to delete <b>${escapeHtml(item.name)} (${item.sku})</b> from your inventory?`,
+    message: `Are you sure you want to permanently delete <b>${escapeHtml(item.name)} (${escapeHtml(item.sku || prodIdStr)})</b> from your inventory catalogue? This action cannot be undone.`,
+    detailsHtml: detailsHtml,
     actionText: 'Yes, Delete Product',
     actionClass: 'btn-danger',
+    cancelText: '✕ Cancel / Keep',
     onConfirm: () => {
-      inventoryItems = inventoryItems.filter(i => i.id !== id);
-      saveInventory();
-      showToast('Product removed from inventory.', 'info');
+      const actualId = String(item.id);
+      if (!deletedInventoryIds.includes(actualId)) {
+        deletedInventoryIds.push(actualId);
+      }
+      if (item.sku && !deletedInventoryIds.includes(item.sku)) {
+        deletedInventoryIds.push(item.sku);
+      }
+      saveDeletedInventoryIds();
+
+      inventoryItems = inventoryItems.filter(i => String(i.id) !== actualId && (!item.sku || i.sku !== item.sku));
+      saveInventory(`Deleted product: ${item.name} (${item.sku || actualId})`, true);
+
+      showToast(`Product "${item.name}" deleted successfully. ✓`, 'info');
       renderInventory();
-  renderStockMovementsTable();
+      renderStockMovementsTable();
+      updateDashboardInventoryOverview();
+    }
+  });
+}
+
+function promptClearAllInventory() {
+  if (inventoryItems.length === 0) {
+    showToast('Inventory is already empty.', 'info');
+    return;
+  }
+  const canDelete = currentUser && (currentUser.role === 'owner' || currentUser.role === 'partner');
+  if (!canDelete) {
+    showToast('Only Owner and Partner accounts can clear all inventory.', 'error');
+    return;
+  }
+
+  openConfirmModal({
+    title: '⚠️ Clear ALL Products from Inventory?',
+    message: `Are you sure you want to delete all <b>${inventoryItems.length} products</b> from your inventory catalogue? All product stock records will be removed across all devices and Cloud Sync.<br><br><span style="color:#dc2626;font-weight:700;">We recommend exporting an Inventory CSV backup first.</span>`,
+    actionText: 'Yes, Clear All Products',
+    actionClass: 'btn-danger',
+    cancelText: '✕ Cancel / Keep',
+    onConfirm: () => {
+      inventoryItems.forEach(i => {
+        if (i && i.id != null) {
+          const sId = String(i.id);
+          if (!deletedInventoryIds.includes(sId)) deletedInventoryIds.push(sId);
+        }
+        if (i && i.sku && !deletedInventoryIds.includes(i.sku)) {
+          deletedInventoryIds.push(i.sku);
+        }
+      });
+      saveDeletedInventoryIds();
+      inventoryItems = [];
+      saveInventory('Cleared all inventory products', true);
+      showToast('All inventory products removed successfully. ✓', 'info');
+      renderInventory();
+      renderStockMovementsTable();
+      updateDashboardInventoryOverview();
     }
   });
 }
