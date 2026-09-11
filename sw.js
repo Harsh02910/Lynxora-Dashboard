@@ -2,7 +2,7 @@
 //  Lynxora PWA â€” Service Worker (Network-First)
 //  Always fetches latest files, falls back to offline cache
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-const CACHE_NAME = 'lynxora-v13';
+const CACHE_NAME = 'lynxora-v22';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const OFFLINE_ASSETS = [
   './logo.png',
   './manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
   'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js'

@@ -268,7 +268,7 @@ function handleLoginSubmit(e) {
   // 2. If not found locally, query Cloud Firestore to check if this user was created on another device
   if (firestoreDb || typeof firebase !== 'undefined') {
     if (errorEl) {
-      errorEl.innerHTML = '🔄 Verifying credentials with Cloud Sync...';
+      errorEl.innerHTML = 'Verifying credentials with Cloud Sync...';
       errorEl.style.display = 'block';
     }
     const roomId = getActiveSyncRoomId();
@@ -330,11 +330,11 @@ function handleLogout() {
 
 function getRoleEmoji(role) {
   switch (role) {
-    case 'owner': return '👑 Owner';
-    case 'partner': return '🤝 Partner';
-    case 'staff': return '🧑‍💼 Staff';
-    case 'viewer': return '👁️ Viewer';
-    default: return '👤 User';
+    case 'owner': return 'Owner';
+    case 'partner': return 'Partner';
+    case 'staff': return 'Staff';
+    case 'viewer': return 'Viewer';
+    default: return 'User';
   }
 }
 
@@ -551,7 +551,7 @@ function handleUserFormSubmit(e) {
     saveCompanyUsers(`Updated user: ${name} (@${username})`);
     closeUserModal();
     renderUserAccounts();
-    showToast(`User account "${name}" updated successfully! 🎉`, 'success');
+    showToast(`User account "${name}" updated successfully!`, 'success');
 
   } else {
     // ── CREATE NEW USER ──
@@ -573,7 +573,7 @@ function handleUserFormSubmit(e) {
     saveCompanyUsers(`Created user: ${name} (${getRoleEmoji(role)})`);
     closeUserModal();
     renderUserAccounts();
-    showToast(`User "${name}" (${getRoleEmoji(role)}) created successfully! 🎉`, 'success');
+    showToast(`User "${name}" (${getRoleEmoji(role)}) created successfully!`, 'success');
   }
 }
 
@@ -594,7 +594,7 @@ function deleteUserAccount(userId) {
 
   const detailsHtml = `
     <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;display:flex;flex-direction:column;gap:6px;">
-      <div class="confirm-preview-row"><span class="confirm-preview-label">User Name:</span><span class="confirm-preview-val">👤 <b>${escapeHtml(u.name)}</b></span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">User Name:</span><span class="confirm-preview-val"><b>${escapeHtml(u.name)}</b></span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Username:</span><span class="confirm-preview-val">@${escapeHtml(u.username)}</span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Role:</span><span class="confirm-preview-val"><span class="badge" style="background:#e0e7ff;color:#4338ca;font-weight:700;">${escapeHtml(u.role.toUpperCase())}</span></span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Status:</span><span class="confirm-preview-val" style="color:${u.active ? '#059669' : '#dc2626'};font-weight:700;">${u.active ? '● Active' : '○ Inactive'}</span></div>
@@ -602,12 +602,12 @@ function deleteUserAccount(userId) {
   `;
 
   openConfirmModal({
-    title: '⚠️ Delete User Account?',
+    title: 'Delete User Account?',
     message: `Are you sure you want to permanently delete user account "<b>${escapeHtml(u.name)}</b>" (@${escapeHtml(u.username)})? This user will immediately lose access and will no longer be able to log in.`,
     detailsHtml: detailsHtml,
-    actionText: '🗑️ Yes, Delete User',
+    actionText: 'Yes, Delete User',
     actionClass: 'btn-danger',
-    cancelText: '✕ Cancel / Keep',
+    cancelText: 'Cancel / Keep',
     onConfirm: () => {
       companyUsers = companyUsers.filter(item => item.id !== userId);
       saveCompanyUsers(`Deleted user account: ${u.name} (@${u.username})`);
@@ -621,6 +621,7 @@ function deleteUserAccount(userId) {
 //  INITIALIZATION
 // ══════════════════════════════════════════════════
 function init() {
+  initTheme();
   const urlParams = new URLSearchParams(window.location.search);
   const roomParam = urlParams.get('room');
   if (roomParam) {
@@ -638,6 +639,7 @@ function init() {
   loadInventory();
   loadStockMovements();
   loadInvoices();
+  updateInvoicesHeaderBadge();
   loadTrackedPricing();
   loadTrackedFlipkart();
   updateAmzTrackedBadge();
@@ -742,7 +744,7 @@ function getCategoryBadgeHtml(cat) {
     return `<span class="cat-badge cat-flipkart">${getFlipkartSvg(15)} <b>Flipkart</b></span>`;
   }
   if (cat === 'Product Purchase / Inventory') {
-    return `<span style="display:inline-flex;align-items:center;gap:5px;font-weight:700;color:#c2410c;">📦 ${escapeHtml(cat)}</span>`;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;font-weight:700;color:#c2410c;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> ${escapeHtml(cat)}</span>`;
   }
   return escapeHtml(cat);
 }
@@ -781,35 +783,35 @@ function handleTimeFilterChange() {
   const toEl = document.getElementById('filterDateTo');
   const labelEl = document.getElementById('filterActiveLabel');
 
-  let text = '📅 All Time';
+  let text = 'All Time';
   const now = new Date();
 
   if (timeFilterMode === 'all') {
-    text = '📅 All Time';
+    text = 'All Time';
   } else if (timeFilterMode === 'thisYear') {
-    text = `📅 Year ${now.getFullYear()}`;
+    text = `Year ${now.getFullYear()}`;
   } else if (timeFilterMode === 'thisMonth') {
     const mStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    text = `📅 ${getMonthFullLabel(mStr)}`;
+    text = `${getMonthFullLabel(mStr)}`;
   } else if (timeFilterMode === 'customYear') {
     filterYear = yearSelect ? yearSelect.value : '2026';
-    text = filterYear === 'ALL' ? '📅 All Years' : `📅 Year ${filterYear}`;
+    text = filterYear === 'ALL' ? 'All Years' : `Year ${filterYear}`;
   } else if (timeFilterMode === 'customMonth') {
     filterMonth = monthSelect ? monthSelect.value : '';
-    text = filterMonth ? `📅 ${getMonthFullLabel(filterMonth)}` : '📅 Select Month';
+    text = filterMonth ? `${getMonthFullLabel(filterMonth)}` : 'Select Month';
   } else if (timeFilterMode === 'customRange') {
     filterDateFrom = fromEl ? fromEl.value : '';
     filterDateTo = toEl ? toEl.value : '';
     if (filterDateFrom && filterDateTo) {
-      text = `📅 ${formatDate(filterDateFrom)} — ${formatDate(filterDateTo)}`;
+      text = `${formatDate(filterDateFrom)} — ${formatDate(filterDateTo)}`;
     } else if (filterDateFrom) {
-      text = `📅 From ${formatDate(filterDateFrom)}`;
+      text = `From ${formatDate(filterDateFrom)}`;
     } else {
-      text = '📅 Custom Date Range';
+      text = 'Custom Date Range';
     }
   }
 
-  if (labelEl) labelEl.innerHTML = `<span>${text}</span>`;
+  if (labelEl) labelEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${text}</span>`;
 
   if (activePage === 'dashboard') updateDashboard();
   if (activePage === 'reports') renderReports();
@@ -1020,19 +1022,19 @@ function openScorecardDrilldown(type) {
   switch (type) {
     case 'income':
       matched = timeRecs.filter(r => r.type === 'Income');
-      title = '🟢 Net Income Records';
+      title = 'Net Income Records';
       subLabel = 'Total Income';
       totalAmt = matched.reduce((s, r) => s + r.amount, 0);
       break;
     case 'expense':
       matched = timeRecs.filter(r => r.type === 'Expense');
-      title = '🔴 Total Expense Records';
+      title = 'Total Expense Records';
       subLabel = 'Total Outflows & Expenses';
       totalAmt = matched.reduce((s, r) => s + r.amount, 0);
       break;
     case 'cash':
       matched = timeRecs.filter(r => r.paymentMethod === 'Cash' || (r.type === 'Transfer' && (r.category.includes('Withdrawal') || r.category.includes('Deposit'))));
-      title = '💵 Cash on Hand Records';
+      title = 'Cash on Hand Records';
       subLabel = 'Physical Cash & Bank Cash Withdrawals';
       totalAmt = matched.reduce((s, r) => {
         if (r.type === 'Income') return s + r.amount;
@@ -1046,7 +1048,7 @@ function openScorecardDrilldown(type) {
       break;
     case 'bank':
       matched = timeRecs.filter(r => r.paymentMethod === 'Online/UPI' || (r.type === 'Transfer' && (r.category.includes('Withdrawal') || r.category.includes('Deposit'))));
-      title = '📱 Bank / UPI Records';
+      title = 'Bank / UPI Records';
       subLabel = 'Online, UPI & Bank Cash Withdrawals';
       totalAmt = matched.reduce((s, r) => {
         if (r.type === 'Income') return s + r.amount;
@@ -1060,13 +1062,13 @@ function openScorecardDrilldown(type) {
       break;
     case 'loan':
       matched = timeRecs.filter(r => r.category === 'Loan Received' || r.category === 'Loan Payment');
-      title = '🏦 Loan Records';
+      title = 'Loan Records';
       subLabel = 'Loan Received & Repayments';
       totalAmt = matched.reduce((s, r) => s + (r.category === 'Loan Received' ? r.amount : -r.amount), 0);
       break;
     case 'profit':
       matched = timeRecs.filter(r => r.type === 'Income' || r.type === 'Expense');
-      title = '🟣 Profit & Loss Operating Records';
+      title = 'Profit & Loss Operating Records';
       subLabel = 'Revenue vs Expenses';
       const inc = matched.filter(r => r.type === 'Income').reduce((s, r) => s + r.amount, 0);
       const exp = matched.filter(r => r.type === 'Expense').reduce((s, r) => s + r.amount, 0);
@@ -1074,13 +1076,13 @@ function openScorecardDrilldown(type) {
       break;
     case 'ratio':
       matched = timeRecs.filter(r => r.type === 'Income' || r.type === 'Expense');
-      title = '📊 Profit & Loss Ratio Breakdown';
+      title = 'Profit & Loss Ratio Breakdown';
       subLabel = 'All Operating Records';
       totalAmt = matched.reduce((s, r) => s + (r.type === 'Income' ? r.amount : -r.amount), 0);
       break;
     case 'asset':
       matched = timeRecs.filter(r => r.type === 'Asset');
-      title = '🏢 Company Assets Records';
+      title = 'Company Assets Records';
       subLabel = 'Total Company Assets';
       totalAmt = matched.reduce((s, r) => s + r.amount, 0);
       break;
@@ -1099,8 +1101,7 @@ function openFinalAccountDrilldown(catName, typeContext) {
   });
 
   const totalAmt = targetRecs.reduce((s, r) => s + r.amount, 0);
-  const icon = typeContext === 'Income' ? '🟢' : (typeContext === 'Expense' ? '🔴' : '🏢');
-  const title = `${icon} ${catName} — Transaction Records`;
+  const title = `${catName} — Transaction Records`;
   const subLabel = `${typeContext} Category (${repYear === 'ALL' ? 'All Financial Years' : 'FY ' + repYear})`;
 
   currentDrilldownType = 'category_' + catName;
@@ -1118,7 +1119,7 @@ function openMonthDrilldown(monthStr) {
   const exp = targetRecs.filter(r => r.type === 'Expense').reduce((s, r) => s + r.amount, 0);
   const net = inc - exp;
 
-  const title = `📅 ${getMonthFullLabel(monthStr)} — Monthly Records`;
+  const title = `${getMonthFullLabel(monthStr)} — Monthly Records`;
   const subLabel = `Net Result: ${formatCurrency(net)} (Income: ${formatCurrency(inc)} | Expense: ${formatCurrency(exp)})`;
 
   showDrilldownPopup(title, subLabel, net, targetRecs, 'monthly');
@@ -1137,7 +1138,7 @@ function showDrilldownPopup(title, subLabel, totalAmt, matchedList, contextType)
     } else {
       matchedList.sort((a, b) => new Date(b.date) - new Date(a.date));
       tbody.innerHTML = matchedList.map(r => {
-        let pm = r.paymentMethod === 'Cash' ? '💵 Cash' : (r.paymentMethod === 'Online/UPI' ? '📱 UPI' : '🔄 Transfer');
+        let pm = r.paymentMethod === 'Cash' ? 'Cash' : (r.paymentMethod === 'Online/UPI' ? 'UPI' : 'Transfer');
         let isPos = r.type === 'Income';
         if (contextType === 'cash') {
           isPos = (r.type === 'Income') || (r.type === 'Transfer' && r.category.includes('Withdrawal'));
@@ -1147,7 +1148,7 @@ function showDrilldownPopup(title, subLabel, totalAmt, matchedList, contextType)
 
         let descText = escapeHtml(r.description);
         if (r.partyName) {
-          descText += ` <span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid #bfdbfe;margin-left:6px;">🏢 ${escapeHtml(r.partyName)}</span>`;
+          descText += ` <span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid #bfdbfe;margin-left:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M9 21V7M15 21V7M9 3h6v4H9z"/></svg> ${escapeHtml(r.partyName)}</span>`;
         }
 
         return `<tr>
@@ -1240,6 +1241,7 @@ function buildRatioLineChart() {
   if (!canvas) return;
   if (chartInstances.ratioLine) chartInstances.ratioLine.destroy();
 
+  const isDark = getAppTheme() === 'dark';
   const now = new Date();
   let filtered = records.filter(r => {
     if (!r.date || r.type === 'Transfer' || r.type === 'Asset') return false;
@@ -1332,13 +1334,13 @@ function buildRatioLineChart() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       scales: {
-        x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 12, weight: '600' }, color: '#475569' } },
+        x: { grid: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 12, weight: '600' }, color: isDark ? '#94a3b8' : '#475569' } },
         y: {
-          grid: { color: 'rgba(0,0,0,0.06)' },
+          grid: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' },
           ticks: {
             callback: v => `${v}%`,
             font: { size: 11, weight: '600' },
-            color: '#64748b'
+            color: isDark ? '#94a3b8' : '#64748b'
           }
         }
       },
@@ -1346,7 +1348,7 @@ function buildRatioLineChart() {
         legend: {
           position: 'top',
           align: 'end',
-          labels: { usePointStyle: true, padding: 18, font: { size: 12, weight: '700' } }
+          labels: { usePointStyle: true, padding: 18, font: { size: 12, weight: '700' }, color: isDark ? '#e2e8f0' : '#1e293b' }
         },
         tooltip: {
           callbacks: {
@@ -1363,6 +1365,7 @@ function buildRatioChart(income, expense) {
   if (!canvas) return;
   if (chartInstances.ratio) chartInstances.ratio.destroy();
 
+  const isDark = getAppTheme() === 'dark';
   const ratio = expense > 0 ? (income / expense).toFixed(2) : (income > 0 ? '∞' : '0.00');
 
   const centerText = {
@@ -1371,12 +1374,12 @@ function buildRatioChart(income, expense) {
       const { width, height, ctx } = chart;
       ctx.save();
       ctx.font = '800 1.8em Plus Jakarta Sans, sans-serif';
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(ratio, width / 2, height / 2 - 8);
       ctx.font = '700 0.75em Plus Jakarta Sans, sans-serif';
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
       ctx.fillText('Ratio', width / 2, height / 2 + 18);
       ctx.restore();
     }
@@ -1388,7 +1391,7 @@ function buildRatioChart(income, expense) {
       labels: ['Total Income', 'Total Expenses'],
       datasets: [{
         data: [income, expense],
-        backgroundColor: ['#10b981', '#f43f5e'],
+        backgroundColor: ['#10b981', '#f6bcba'],
         borderWidth: 0,
         borderRadius: 6
       }]
@@ -1398,7 +1401,7 @@ function buildRatioChart(income, expense) {
       maintainAspectRatio: false,
       cutout: '72%',
       plugins: {
-        legend: { position: 'bottom', labels: { padding: 18, usePointStyle: true, font: { size: 12, weight: '600' } } },
+        legend: { position: 'bottom', labels: { padding: 18, usePointStyle: true, font: { size: 12, weight: '600' }, color: isDark ? '#e2e8f0' : '#1e293b' } },
         tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${formatCurrency(ctx.raw)}` } }
       }
     },
@@ -1411,6 +1414,7 @@ function buildTypeChart(timeRecs) {
   if (!canvas) return;
   if (chartInstances.type) chartInstances.type.destroy();
 
+  const isDark = getAppTheme() === 'dark';
   const monthly = {};
   timeRecs.forEach(r => {
     if (r.type === 'Transfer' || r.type === 'Asset') return;
@@ -1427,7 +1431,7 @@ function buildTypeChart(timeRecs) {
       labels: months.map(getMonthLabel),
       datasets: [
         { label: 'Income', data: months.map(m => monthly[m].income), backgroundColor: '#10b981', borderRadius: 6, barPercentage: 0.7, categoryPercentage: 0.6 },
-        { label: 'Expenses', data: months.map(m => monthly[m].expense), backgroundColor: '#f43f5e', borderRadius: 6, barPercentage: 0.7, categoryPercentage: 0.6 }
+        { label: 'Expenses', data: months.map(m => monthly[m].expense), backgroundColor: '#f6bcba', borderRadius: 6, barPercentage: 0.7, categoryPercentage: 0.6 }
       ]
     },
     options: {
@@ -1435,11 +1439,11 @@ function buildTypeChart(timeRecs) {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { ticks: { callback: v => `₹${v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v}`, font: { size: 11 }, color: '#94a3b8' }, grid: { color: 'rgba(0,0,0,0.04)' } },
-        y: { ticks: { font: { size: 12, weight: '600' }, color: '#334155' }, grid: { display: false } }
+        x: { ticks: { callback: v => `₹${v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v}`, font: { size: 11 }, color: isDark ? '#94a3b8' : '#64748b' }, grid: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' } },
+        y: { ticks: { font: { size: 12, weight: '600' }, color: isDark ? '#e2e8f0' : '#334155' }, grid: { display: false } }
       },
       plugins: {
-        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, padding: 14, font: { size: 12, weight: '600' } } },
+        legend: { position: 'top', align: 'end', labels: { usePointStyle: true, padding: 14, font: { size: 12, weight: '600' }, color: isDark ? '#e2e8f0' : '#1e293b' } },
         tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${formatCurrency(ctx.raw)}` } }
       }
     }
@@ -1451,6 +1455,7 @@ function buildCategoryChart(timeRecs) {
   if (!canvas) return;
   if (chartInstances.category) chartInstances.category.destroy();
 
+  const isDark = getAppTheme() === 'dark';
   const totals = {};
   timeRecs.forEach(r => {
     if (r.type === 'Transfer') return;
@@ -1461,27 +1466,28 @@ function buildCategoryChart(timeRecs) {
   const data = sorted.map(e => e[1]);
   const total = data.reduce((a, b) => a + b, 0);
 
-  const palette = sorted.map(([cat]) => {
+  const pastelColors = ['#c8a8e9', '#e3aadd', '#f6bcba', '#c3c7f4', '#f2dddc', '#10b981', '#3d88b0', '#e06b72'];
+  const palette = sorted.map(([cat], idx) => {
     if (cat === 'Amazon') return '#ff9900';
     if (cat === 'Flipkart') return '#2874f0';
     if (cat === 'Sales Revenue') return '#10b981';
-    if (cat === 'Service Income') return '#06b6d4';
-    if (cat === 'Loan Received') return '#f59e0b';
-    if (cat === 'Loan Payment') return '#e11d48';
-    return '#8b5cf6';
+    if (cat === 'Service Income') return '#c3c7f4';
+    if (cat === 'Loan Received') return '#f2dddc';
+    if (cat === 'Loan Payment') return '#f6bcba';
+    return pastelColors[idx % pastelColors.length];
   });
 
   chartInstances.category = new Chart(canvas, {
     type: 'pie',
     data: {
       labels: sorted.map(e => e[0]),
-      datasets: [{ data, backgroundColor: palette, borderWidth: 2, borderColor: '#fff', hoverOffset: 8 }]
+      datasets: [{ data, backgroundColor: palette, borderWidth: 2, borderColor: isDark ? '#150f20' : '#fff', hoverOffset: 8 }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'right', labels: { padding: 12, usePointStyle: true, font: { size: 11, weight: '600' } } },
+        legend: { position: 'right', labels: { padding: 12, usePointStyle: true, font: { size: 11, weight: '600' }, color: isDark ? '#e2e8f0' : '#1e293b' } },
         tooltip: {
           callbacks: {
             label(ctx) {
@@ -1551,21 +1557,21 @@ function renderRecordsTable() {
   tbody.innerHTML = page.map(r => {
     let badgeClass = 'badge-income', amtClass = 'amount-positive', amtSign = '+';
     if (r.type === 'Expense') { badgeClass = 'badge-expense'; amtClass = 'amount-negative'; amtSign = '-'; }
-    if (r.type === 'Transfer') { badgeClass = 'badge-transfer'; amtClass = 'amount-transfer'; amtSign = '🔄 '; }
+    if (r.type === 'Transfer') { badgeClass = 'badge-transfer'; amtClass = 'amount-transfer'; amtSign = '↔ '; }
     if (r.type === 'Asset') { badgeClass = 'badge-asset'; amtClass = 'amount-asset'; amtSign = ''; }
 
     const pmBadge = r.paymentMethod === 'Cash'
-      ? '<span class="pm-badge pm-cash">&#128180; Cash</span>'
+      ? '<span class="pm-badge pm-cash">Cash</span>'
       : r.paymentMethod === 'Online/UPI'
-        ? '<span class="pm-badge pm-upi">&#128241; UPI</span>'
+        ? '<span class="pm-badge pm-upi">UPI</span>'
         : '<span class="pm-badge pm-na">&#8212;</span>';
 
     let descText = escapeHtml(r.description);
     if (r.partyName) {
-      descText += ` <span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid #bfdbfe;margin-left:6px;">🏢 ${escapeHtml(r.partyName)}</span>`;
+      descText += ` <span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid #bfdbfe;margin-left:6px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M9 21V7M15 21V7M9 3h6v4H9z"/></svg> ${escapeHtml(r.partyName)}</span>`;
     }
     if (r.createdBy) {
-      descText += ` <span style="display:inline-block;background:#f8fafc;color:#64748b;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:6px;border:1px solid #e2e8f0;margin-left:4px;" title="Created by ${escapeHtml(r.createdBy)}">👤 ${escapeHtml(r.createdBy)}</span>`;
+      descText += ` <span style="display:inline-flex;align-items:center;gap:4px;background:#f8fafc;color:#64748b;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:6px;border:1px solid #e2e8f0;margin-left:4px;" title="Created by ${escapeHtml(r.createdBy)}">${escapeHtml(r.createdBy)}</span>`;
     }
 
     const isViewer = currentUser && currentUser.role === 'viewer';
@@ -1747,12 +1753,12 @@ function confirmBulkDelete() {
   `;
 
   openConfirmModal({
-    title: `⚠️ Delete ${count} Selected Records?`,
+    title: `Delete ${count} Selected Records?`,
     message: `Are you sure you want to permanently delete these <b>${count} financial records</b>? This action cannot be undone and will immediately recalculate your company Profit &amp; Loss totals across all devices.`,
     detailsHtml: detailsHtml,
-    actionText: `🗑️ Yes, Delete ${count} Records`,
+    actionText: `Yes, Delete ${count} Records`,
     actionClass: 'btn-danger',
-    cancelText: '✕ Cancel / Keep',
+    cancelText: 'Cancel / Keep',
     onConfirm: () => {
       const deletedCount = selectedRecordIds.size;
       const idsToDelete = Array.from(selectedRecordIds);
@@ -1839,9 +1845,8 @@ function renderPLAccount(recs) {
       html += Object.entries(expByCat).sort((a, b) => b[1] - a[1])
         .map(([c, a]) => {
           const isLoan = c === 'Loan Payment';
-          const icon = isLoan ? '&#128970; ' : '';
           return `<div class="fa-row fa-row-clickable ${isLoan ? 'fa-row-loan' : ''}" onclick="openFinalAccountDrilldown('${escapeHtml(c)}', 'Expense')" title="Click to view all ${escapeHtml(c)} records">
-            <span>${icon}${c}</span>
+            <span>${c}</span>
             <span style="color:#e11d48;">${formatCurrency(a)}</span>
           </div>`;
         }).join('');
@@ -1909,18 +1914,18 @@ function renderBalanceSheet(recs) {
     } else {
       html += Object.entries(assetByCat).sort((a, b) => b[1] - a[1])
         .map(([c, a]) => `<div class="fa-row fa-row-clickable" onclick="openFinalAccountDrilldown('${escapeHtml(c)}', 'Asset')" title="Click to view all ${escapeHtml(c)} items">
-          <span>&#128736; ${c}</span>
+          <span>${c}</span>
           <span>${formatCurrency(a)}</span>
         </div>`).join('');
     }
     html += `<div class="fa-subtotal fa-row-clickable" onclick="openScorecardDrilldown('asset')"><span>Total Fixed Assets</span><span>${formatCurrency(totalFixedAssets)}</span></div>`;
     html += '<div class="fa-section-title" style="margin-top:14px;">Current Assets</div>';
     html += `<div class="fa-row fa-row-clickable" onclick="openScorecardDrilldown('cash')" title="Click to view Cash on Hand records">
-      <span>&#128180; Cash on Hand</span>
+      <span>Cash on Hand</span>
       <span>${formatCurrency(cashOnHand)}</span>
     </div>`;
     html += `<div class="fa-row fa-row-clickable" onclick="openScorecardDrilldown('bank')" title="Click to view Bank/UPI records">
-      <span>&#127970; Bank Balance</span>
+      <span>Bank Balance</span>
       <span>${formatCurrency(bankBalance)}</span>
     </div>`;
     html += `<div class="fa-subtotal"><span>Total Current Assets</span><span>${formatCurrency(totalCurrentAssets)}</span></div>`;
@@ -1949,7 +1954,7 @@ function renderBalanceSheet(recs) {
         .forEach(r => { loansByCred[r.description] = (loansByCred[r.description] || 0) + r.amount; });
       html += Object.entries(loansByCred)
         .map(([desc, amt]) => `<div class="fa-row fa-row-clickable" onclick="openScorecardDrilldown('loan')" title="Click to view Loan details">
-          <span>&#128970; ${escapeHtml(desc)}</span>
+          <span>${escapeHtml(desc)}</span>
           <span>${formatCurrency(amt)}</span>
         </div>`).join('');
       if (f.loanPayments > 0) {
@@ -2150,47 +2155,47 @@ function handleModalCategoryChange(cat) {
 
     if (partyLabel && partyHint && partyInput) {
       if (cat === 'Staff Upad / Advance' || cat === 'Salaries & Wages') {
-        partyLabel.innerHTML = '👤 Staff / Employee Name';
+        partyLabel.innerHTML = 'Staff / Employee Name';
         partyHint.innerText = '(Who received the salary/advance?)';
         partyInput.placeholder = 'e.g. Ramesh Kumar, Sunita Verma, Staff Member';
       } else if (cat === 'Rent & Lease') {
-        partyLabel.innerHTML = '🏢 Landlord / Property Owner / Agency';
+        partyLabel.innerHTML = 'Landlord / Property Owner / Agency';
         partyHint.innerText = '(Who did you pay rent to?)';
         partyInput.placeholder = 'e.g. Landmark Realty, Landlord Name, Commercial Hub';
       } else if (cat === 'Utilities') {
-        partyLabel.innerHTML = '🏢 Utility Provider / Company';
+        partyLabel.innerHTML = 'Utility Provider / Company';
         partyHint.innerText = '(e.g. Electricity Board, Gas Co, Internet)';
         partyInput.placeholder = 'e.g. Adani Electricity, Torrent Power, Airtel Broadband';
       } else if (cat === 'Marketing') {
-        partyLabel.innerHTML = '🏢 Marketing Agency / Platform / Vendor';
+        partyLabel.innerHTML = 'Marketing Agency / Platform / Vendor';
         partyHint.innerText = '(e.g. Meta Ads, Google, Influencer Agency)';
         partyInput.placeholder = 'e.g. Google Ads, Meta Facebook, Growth Media Agency';
       } else if (cat === 'Packaging & Shipping') {
-        partyLabel.innerHTML = '🏢 Courier / Logistics / Box Supplier';
+        partyLabel.innerHTML = 'Courier / Logistics / Box Supplier';
         partyHint.innerText = '(e.g. Shiprocket, Delhivery, Box Manufacturer)';
         partyInput.placeholder = 'e.g. Delhivery, Shiprocket, Packman Box Suppliers';
       } else if (cat === 'Loan Payment' || cat === 'Loan Received') {
-        partyLabel.innerHTML = '🏦 Bank / Lender / Financier';
+        partyLabel.innerHTML = 'Bank / Lender / Financier';
         partyHint.innerText = '(Bank or lender party name)';
         partyInput.placeholder = 'e.g. HDFC Bank, Bajaj Finance, Private Lender';
       } else if (cat === 'Insurance') {
-        partyLabel.innerHTML = '🏢 Insurance Provider / Company';
+        partyLabel.innerHTML = 'Insurance Provider / Company';
         partyHint.innerText = '(e.g. ICICI Lombard, HDFC ERGO, Star Health)';
         partyInput.placeholder = 'e.g. ICICI Lombard, HDFC ERGO, Insurance Broker';
       } else if (cat === 'Professional Services') {
-        partyLabel.innerHTML = '🏢 CA / Legal / Consultant Firm';
+        partyLabel.innerHTML = 'CA / Legal / Consultant Firm';
         partyHint.innerText = '(Consultant or agency name)';
         partyInput.placeholder = 'e.g. Sharma & Associates CA, Legal Consultants';
       } else if (cat === 'Office Supplies') {
-        partyLabel.innerHTML = '🏢 Stationery / Vendor / Shop';
+        partyLabel.innerHTML = 'Stationery / Vendor / Shop';
         partyHint.innerText = '(Store or supplier name)';
         partyInput.placeholder = 'e.g. Reliance Digital, Local Stationery Mart';
       } else if (cat === 'Other Income') {
-        partyLabel.innerHTML = '🏢 Company / Client Name';
+        partyLabel.innerHTML = 'Company / Client Name';
         partyHint.innerText = '(From which company/client?)';
         partyInput.placeholder = 'e.g. Client Corp, Affiliate Partner';
       } else {
-        partyLabel.innerHTML = '🏢 Party Name / Supplier / Vendor';
+        partyLabel.innerHTML = 'Party Name / Supplier / Vendor';
         partyHint.innerText = '(Company, vendor, or supplier name)';
         partyInput.placeholder = 'e.g. ABC Textiles, Super Traders, Shri Ram Fabrics, Vendor Name';
       }
@@ -2325,7 +2330,7 @@ function openConfirmModal(options) {
   }
 
   if (actionBtn) {
-    actionBtn.innerHTML = options.actionText || '🗑️ Yes, Delete';
+    actionBtn.innerHTML = options.actionText || 'Yes, Delete';
     actionBtn.className = `btn ${options.actionClass || 'btn-danger'}`;
   }
 
@@ -2334,12 +2339,16 @@ function openConfirmModal(options) {
   }
 
   pendingConfirmCallback = typeof options.onConfirm === 'function' ? options.onConfirm : null;
+  overlay.style.display = 'flex';
   overlay.classList.add('active');
 }
 
 function closeConfirmModal() {
   const overlay = document.getElementById('confirmModalOverlay');
-  if (overlay) overlay.classList.remove('active');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.style.display = 'none';
+  }
   pendingConfirmCallback = null;
 }
 
@@ -2356,18 +2365,20 @@ function deleteRecord(id) {
   let descText = escapeHtml(r.description);
   let partyHtml = '';
   if (r.partyName) {
-    partyHtml = `<div class="confirm-preview-row"><span class="confirm-preview-label">Party / Vendor:</span><span class="confirm-preview-val">🏢 ${escapeHtml(r.partyName)}</span></div>`;
+    partyHtml = `<div class="confirm-preview-row"><span class="confirm-preview-label">Party / Vendor:</span><span class="confirm-preview-val"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></svg>${escapeHtml(r.partyName)}</span></div>`;
   }
 
   let pmHtml = '';
   if (r.paymentMethod) {
-    const pmIcon = r.paymentMethod === 'Cash' ? '💵' : '📱';
-    pmHtml = `<div class="confirm-preview-row"><span class="confirm-preview-label">Payment Method:</span><span class="confirm-preview-val">${pmIcon} ${escapeHtml(r.paymentMethod)}</span></div>`;
+    const pmSvg = r.paymentMethod === 'Cash'
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>';
+    pmHtml = `<div class="confirm-preview-row"><span class="confirm-preview-label">Payment Method:</span><span class="confirm-preview-val">${pmSvg}${escapeHtml(r.paymentMethod)}</span></div>`;
   }
 
   let creatorHtml = '';
   if (r.createdBy) {
-    creatorHtml = `<div class="confirm-preview-row"><span class="confirm-preview-label">Created By:</span><span class="confirm-preview-val">👤 ${escapeHtml(r.createdBy)}</span></div>`;
+    creatorHtml = `<div class="confirm-preview-row"><span class="confirm-preview-label">Created By:</span><span class="confirm-preview-val"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${escapeHtml(r.createdBy)}</span></div>`;
   }
 
   const amtColor = r.type === 'Income' ? '#059669' : '#dc2626';
@@ -2378,7 +2389,7 @@ function deleteRecord(id) {
 
   const detailsHtml = `
     <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;display:flex;flex-direction:column;gap:6px;">
-      <div class="confirm-preview-row"><span class="confirm-preview-label">Date:</span><span class="confirm-preview-val">📅 ${formatDate(r.date)}</span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">Date:</span><span class="confirm-preview-val"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${formatDate(r.date)}</span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Description:</span><span class="confirm-preview-val"><b>${descText}</b></span></div>
       ${partyHtml}
       <div class="confirm-preview-row"><span class="confirm-preview-label">Type &amp; Category:</span><span class="confirm-preview-val">${typeBadge} &bull; <b>${escapeHtml(r.category)}</b></span></div>
@@ -2389,10 +2400,10 @@ function deleteRecord(id) {
   `;
 
   openConfirmModal({
-    title: '⚠️ Delete Financial Transaction?',
+    title: 'Delete Financial Transaction?',
     message: 'Are you sure you want to permanently delete this transaction? This action cannot be undone and will immediately recalculate your company Profit &amp; Loss totals.',
     detailsHtml: detailsHtml,
-    actionText: '🗑️ Yes, Delete Transaction',
+    actionText: 'Yes, Delete Transaction',
     actionClass: 'btn-danger',
     cancelText: '✕ Cancel / Keep',
     onConfirm: () => {
@@ -2650,6 +2661,8 @@ function attachEventListeners() {
       closeConfirmModal();
       closeStockAdjustModal();
       closeTaxInvoiceModal();
+      closeGenerateInvoiceModal();
+      closeInvoicesManagerModal();
     }
   });
 
@@ -2734,14 +2747,14 @@ function attachEventListeners() {
 // ══════════════════════════════════════════════════
 function handleSettingsInstall() {
   if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-    showToast('Lynxora is already installed and running as an app! 🎉', 'info');
+    showToast('Lynxora is already installed and running as an app!', 'info');
     return;
   }
   if (typeof deferredInstallPrompt !== 'undefined' && deferredInstallPrompt) {
     deferredInstallPrompt.prompt();
     deferredInstallPrompt.userChoice.then(result => {
       if (result.outcome === 'accepted') {
-        showToast('Lynxora installed successfully! 🎉', 'success');
+        showToast('Lynxora installed successfully!', 'success');
       }
     });
   } else {
@@ -2749,11 +2762,11 @@ function handleSettingsInstall() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     const isAndroid = /Android/.test(navigator.userAgent);
     if (isIOS) {
-      alert('To install on iPhone/iPad:\n1. Tap the Share button (📤) in Safari\n2. Select "Add to Home Screen" (+)\n3. Tap Add!');
+      alert('To install on iPhone/iPad:\n1. Tap the Safari Share button at bottom\n2. Select "Add to Home Screen"\n3. Tap Add!');
     } else if (isAndroid) {
       alert('To install on Android:\n1. Tap the 3-dot menu (⋮) in Chrome\n2. Select "Install app" or "Add to Home screen"');
     } else {
-      alert('To install on Laptop/Desktop:\n1. Click the Install icon (⊕) in your browser address bar at the top right\nOR\n2. Click "Download Windows Desktop Launcher" below.');
+      alert('To install on Laptop/Desktop:\n1. Click the Install icon in your browser address bar at the top right\nOR\n2. Click "Download Windows Desktop Launcher" below.');
     }
   }
 }
@@ -2784,20 +2797,20 @@ function shareViaWhatsApp() {
   const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const msg = 
-`📊 *Lynxora Financial Snapshot*
-🏢 *Company:* ${company} (FY ${fy})
-📅 *Date:* ${today}
+`*Lynxora Financial Snapshot*
+*Company:* ${company} (FY ${fy})
+*Date:* ${today}
 ━━━━━━━━━━━━━━━━━━
-💰 *Total Income:* ${formatCurrency(f.totalIncome)}
-📉 *Total Expenses:* ${formatCurrency(f.totalExpense)}
-🏆 *Net Profit:* ${formatCurrency(f.netProfit)}
+*Total Income:* ${formatCurrency(f.totalIncome)}
+*Total Expenses:* ${formatCurrency(f.totalExpense)}
+*Net Profit:* ${formatCurrency(f.netProfit)}
 ━━━━━━━━━━━━━━━━━━
-💵 *Cash on Hand:* ${formatCurrency(f.cashOnHand)}
-🏦 *Bank Balance:* ${formatCurrency(f.bankBalance)}
-🏷️ *Loan Outstanding:* ${formatCurrency(f.loanOutstanding)}
+*Cash on Hand:* ${formatCurrency(f.cashOnHand)}
+*Bank Balance:* ${formatCurrency(f.bankBalance)}
+*Loan Outstanding:* ${formatCurrency(f.loanOutstanding)}
 ━━━━━━━━━━━━━━━━━━
-📁 *Total Records:* ${records.length}
-✨ *Lynxora Financial Suite*`;
+*Total Records:* ${records.length}
+*Lynxora Financial Suite*`;
 
   const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
   window.open(waUrl, '_blank');
@@ -2851,7 +2864,7 @@ function importLynxoraPackage(inputEl) {
         }
         saveRecords();
         populateCategoryFilter();
-        showToast(`Imported ${records.length} records from partner successfully! 🎉`, 'success');
+        showToast(`Imported ${records.length} records from partner successfully!`, 'success');
         navigateTo(activePage);
       } else {
         showToast('Invalid backup file format.', 'error');
@@ -2926,7 +2939,7 @@ function saveAndConnectFirebase() {
 
   closeCloudSyncModal();
   initCloudSync();
-  showToast('Connected to Firebase Realtime Cloud Sync! 🚀', 'success');
+  showToast('Connected to Firebase Realtime Cloud Sync!', 'success');
 }
 
 function disconnectCloudSync() {
@@ -3015,6 +3028,30 @@ function saveDeletedRecordIds() {
 }
 loadDeletedRecordIds();
 
+let deletedMovementIds = [];
+function loadDeletedMovementIds() {
+  const saved = localStorage.getItem('lynxora_deleted_movements');
+  if (saved) {
+    try { deletedMovementIds = JSON.parse(saved) || []; } catch { deletedMovementIds = []; }
+  }
+}
+function saveDeletedMovementIds() {
+  localStorage.setItem('lynxora_deleted_movements', JSON.stringify(deletedMovementIds));
+}
+loadDeletedMovementIds();
+
+let deletedInvoiceIds = [];
+function loadDeletedInvoiceIds() {
+  const saved = localStorage.getItem('lynxora_deleted_invoices');
+  if (saved) {
+    try { deletedInvoiceIds = JSON.parse(saved) || []; } catch { deletedInvoiceIds = []; }
+  }
+}
+function saveDeletedInvoiceIds() {
+  localStorage.setItem('lynxora_deleted_invoices', JSON.stringify(deletedInvoiceIds));
+}
+loadDeletedInvoiceIds();
+
 function mergeRecords(localList, remoteList, remoteDeletedIds = []) {
   const allDeleted = new Set([...(deletedRecordIds || []), ...(remoteDeletedIds || [])].map(String));
   if (!Array.isArray(remoteList)) {
@@ -3069,12 +3106,18 @@ function mergeInventory(localList, remoteList) {
   return Array.from(map.values());
 }
 
-function mergeStockMovements(localList, remoteList) {
-  if (!Array.isArray(remoteList)) return Array.isArray(localList) ? localList : [];
-  if (!Array.isArray(localList) || localList.length === 0) return remoteList;
+function mergeStockMovements(localList, remoteList, remoteDeletedIds = []) {
+  const allDeleted = new Set([...(deletedMovementIds || []), ...(remoteDeletedIds || [])].map(String));
+  if (!Array.isArray(remoteList)) {
+    const list = Array.isArray(localList) ? localList : [];
+    return list.filter(m => m && m.id != null && !allDeleted.has(String(m.id)));
+  }
+  if (!Array.isArray(localList) || localList.length === 0) {
+    return remoteList.filter(m => m && m.id != null && !allDeleted.has(String(m.id)));
+  }
   const map = new Map();
-  remoteList.forEach(m => { if (m && m.id != null) map.set(String(m.id), m); });
-  localList.forEach(m => { if (m && m.id != null && !map.has(String(m.id))) map.set(String(m.id), m); });
+  remoteList.forEach(m => { if (m && m.id != null && !allDeleted.has(String(m.id))) map.set(String(m.id), m); });
+  localList.forEach(m => { if (m && m.id != null && !allDeleted.has(String(m.id))) map.set(String(m.id), m); });
   return Array.from(map.values()).sort((a, b) => (b.id || 0) - (a.id || 0));
 }
 
@@ -3086,12 +3129,18 @@ function mergeUsers(localList, remoteList) {
   return remoteList;
 }
 
-function mergeInvoices(localList, remoteList) {
-  if (!Array.isArray(remoteList)) return Array.isArray(localList) ? localList : [];
-  if (!Array.isArray(localList) || localList.length === 0) return remoteList;
+function mergeInvoices(localList, remoteList, remoteDeletedIds = []) {
+  const allDeleted = new Set([...(deletedInvoiceIds || []), ...(remoteDeletedIds || [])].map(String));
+  if (!Array.isArray(remoteList)) {
+    const list = Array.isArray(localList) ? localList : [];
+    return list.filter(inv => inv && inv.id && !allDeleted.has(String(inv.id)));
+  }
+  if (!Array.isArray(localList) || localList.length === 0) {
+    return remoteList.filter(inv => inv && inv.id && !allDeleted.has(String(inv.id)));
+  }
   const map = new Map();
-  remoteList.forEach(inv => { if (inv && inv.id) map.set(String(inv.id), inv); });
-  localList.forEach(inv => { if (inv && inv.id && !map.has(String(inv.id))) map.set(String(inv.id), inv); });
+  remoteList.forEach(inv => { if (inv && inv.id && !allDeleted.has(String(inv.id))) map.set(String(inv.id), inv); });
+  localList.forEach(inv => { if (inv && inv.id && !allDeleted.has(String(inv.id))) map.set(String(inv.id), inv); });
   return Array.from(map.values());
 }
 
@@ -3154,7 +3203,7 @@ function broadcastToCloud(entityName = 'all', actionDesc = '', allowEmpty = fals
   }
 
   const roomId = getActiveSyncRoomId();
-  const authorName = currentUser ? `${currentUser.name} (${getRoleEmoji(currentUser.role)})` : 'Harsh (👑 Owner)';
+  const authorName = currentUser ? `${currentUser.name} (${getRoleEmoji(currentUser.role)})` : 'Harsh (Owner)';
 
   updateSyncPillStatus('syncing', 'Syncing...');
 
@@ -3173,9 +3222,11 @@ function broadcastToCloud(entityName = 'all', actionDesc = '', allowEmpty = fals
   }
   if (entityName === 'stockMovements' || entityName === 'all') {
     payload.stockMovements = stockMovements;
+    payload.deletedMovementIds = deletedMovementIds;
   }
   if (entityName === 'invoices' || entityName === 'all') {
     payload.invoices = invoices;
+    payload.deletedInvoiceIds = deletedInvoiceIds;
   }
   if (entityName === 'users' || entityName === 'all') {
     payload.users = companyUsers;
@@ -3237,6 +3288,32 @@ function applyCloudData(data, source = 'realtime') {
     if (delChanged) saveDeletedRecordIds();
   }
 
+  // 0b. Deleted Stock Movements
+  if (Array.isArray(data.deletedMovementIds)) {
+    let mvDelChanged = false;
+    data.deletedMovementIds.forEach(id => {
+      const sId = String(id);
+      if (!deletedMovementIds.includes(sId)) {
+        deletedMovementIds.push(sId);
+        mvDelChanged = true;
+      }
+    });
+    if (mvDelChanged) saveDeletedMovementIds();
+  }
+
+  // 0c. Deleted Invoices
+  if (Array.isArray(data.deletedInvoiceIds)) {
+    let invDelChanged = false;
+    data.deletedInvoiceIds.forEach(id => {
+      const sId = String(id);
+      if (!deletedInvoiceIds.includes(sId)) {
+        deletedInvoiceIds.push(sId);
+        invDelChanged = true;
+      }
+    });
+    if (invDelChanged) saveDeletedInvoiceIds();
+  }
+
   // 1. Records
   const remoteRecords = Array.isArray(data.records) ? data.records : [];
   let merged;
@@ -3278,7 +3355,7 @@ function applyCloudData(data, source = 'realtime') {
 
   // 3. Stock Movements
   const remoteMovements = Array.isArray(data.stockMovements) ? data.stockMovements : [];
-  const mergedMv = mergeStockMovements(stockMovements, remoteMovements);
+  const mergedMv = mergeStockMovements(stockMovements, remoteMovements, data.deletedMovementIds);
   if (JSON.stringify(stockMovements) !== JSON.stringify(mergedMv)) {
     stockMovements = mergedMv;
     localStorage.setItem('lynxora_stock_movements', JSON.stringify(stockMovements));
@@ -3291,7 +3368,7 @@ function applyCloudData(data, source = 'realtime') {
 
   // 4. Invoices
   const remoteInvoices = Array.isArray(data.invoices) ? data.invoices : [];
-  const mergedInvoices = mergeInvoices(invoices, remoteInvoices);
+  const mergedInvoices = mergeInvoices(invoices, remoteInvoices, data.deletedInvoiceIds);
   if (JSON.stringify(invoices) !== JSON.stringify(mergedInvoices)) {
     invoices = mergedInvoices;
     localStorage.setItem('lynxora_tax_invoices', JSON.stringify(invoices));
@@ -3474,7 +3551,7 @@ function copyEmployeeInviteLink() {
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(inviteUrl).then(() => {
-      showToast('📋 Copied Employee Live Access Link to clipboard! Send this URL to your staff.', 'success');
+      showToast('Copied Employee Live Access Link to clipboard! Send this URL to your staff.', 'success');
     }).catch(() => {
       prompt('Copy this Employee Live Access Link and send it to your staff:', inviteUrl);
     });
@@ -3698,6 +3775,8 @@ function loadInvoices() {
   if (saved) {
     try {
       invoices = JSON.parse(saved) || [];
+      const delSet = new Set((deletedInvoiceIds || []).map(String));
+      invoices = invoices.filter(inv => inv && inv.id && !delSet.has(String(inv.id)));
     } catch { invoices = []; }
   } else {
     invoices = [];
@@ -3885,21 +3964,116 @@ function closeTaxInvoiceModal() {
   const overlay = document.getElementById('taxInvoiceModalOverlay');
   if (overlay) {
     overlay.classList.remove('active');
+    overlay.style.display = 'none';
     overlay.setAttribute('aria-hidden', 'true');
   }
 }
 
+function downloadTaxInvoicePDF() {
+  const paper = document.getElementById('invoicePaper');
+  if (!paper) {
+    showToast('Invoice paper element not found.', 'error');
+    return;
+  }
+  const inv = invoices.find(i => String(i.id) === String(currentViewingInvoiceId));
+  const invNum = inv && inv.invoiceNumber ? inv.invoiceNumber : ('INV-' + Date.now());
+  const cleanNum = invNum.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `${cleanNum}.pdf`;
+
+  showToast('Generating invoice PDF download...', 'info');
+
+  if (typeof html2pdf !== 'undefined') {
+    const opt = {
+      margin: [6, 6, 6, 6],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        scrollY: 0
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(paper).save().then(() => {
+      showToast(`Downloaded ${filename} successfully! ✓`, 'success');
+    }).catch(err => {
+      console.warn('html2pdf generation error, falling back to print dialog:', err);
+      printTaxInvoice();
+    });
+  } else {
+    printTaxInvoice();
+  }
+}
+
 function printTaxInvoice() {
-  document.body.classList.add('printing-invoice');
-  window.print();
-  setTimeout(() => {
-    document.body.classList.remove('printing-invoice');
-  }, 500);
+  const paper = document.getElementById('invoicePaper');
+  if (!paper) {
+    window.print();
+    return;
+  }
+
+  // Use a dedicated print iframe so the main application DOM and classes are never distorted
+  try {
+    let iframe = document.getElementById('invoicePrintFrame');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'invoicePrintFrame';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    const frameDoc = iframe.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tax Invoice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4 portrait; margin: 8mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { margin: 0; padding: 0; background: #ffffff; color: #0f172a; font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 12px; }
+    .invoice-paper { border: none !important; box-shadow: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #cbd5e1; }
+  </style>
+</head>
+<body>
+  ${paper.outerHTML}
+</body>
+</html>`);
+    frameDoc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }, 350);
+  } catch (err) {
+    document.body.classList.add('printing-invoice');
+    const cleanup = () => {
+      document.body.classList.remove('printing-invoice');
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('printing-invoice');
+    }, 2500);
+  }
 }
 
 function openTaxInvoiceModal(invoiceId) {
   currentViewingInvoiceId = invoiceId;
-  const inv = invoices.find(i => i.id === invoiceId);
+  const inv = invoices.find(i => String(i.id) === String(invoiceId));
   if (!inv) {
     showToast('Invoice details not found.', 'error');
     return;
@@ -4081,9 +4255,682 @@ function openTaxInvoiceModal(invoiceId) {
 
   const overlay = document.getElementById('taxInvoiceModalOverlay');
   if (overlay) {
+    overlay.style.display = 'flex';
     overlay.classList.add('active');
     overlay.setAttribute('aria-hidden', 'false');
   }
+}
+
+// ==========================================
+// DEDICATED GST TAX INVOICE GENERATOR & MANAGER SUITE
+// ==========================================
+const INDIAN_STATES = [
+  'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
+  'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa',
+  'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
+  'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+];
+
+const GSTIN_STATE_CODES = {
+  '01': 'Jammu and Kashmir', '02': 'Himachal Pradesh', '03': 'Punjab', '04': 'Chandigarh',
+  '05': 'Uttarakhand', '06': 'Haryana', '07': 'Delhi', '08': 'Rajasthan', '09': 'Uttar Pradesh',
+  '10': 'Bihar', '11': 'Sikkim', '12': 'Arunachal Pradesh', '13': 'Nagaland', '14': 'Manipur',
+  '15': 'Mizoram', '16': 'Tripura', '17': 'Meghalaya', '18': 'Assam', '19': 'West Bengal',
+  '20': 'Jharkhand', '21': 'Odisha', '22': 'Chhattisgarh', '23': 'Madhya Pradesh', '24': 'Gujarat',
+  '25': 'Dadra and Nagar Haveli and Daman and Diu', '26': 'Dadra and Nagar Haveli and Daman and Diu',
+  '27': 'Maharashtra', '28': 'Andhra Pradesh', '29': 'Karnataka', '30': 'Goa', '31': 'Lakshadweep',
+  '32': 'Kerala', '33': 'Tamil Nadu', '34': 'Puducherry', '35': 'Andaman and Nicobar Islands',
+  '36': 'Telangana', '37': 'Andhra Pradesh', '38': 'Ladakh'
+};
+
+let genInvoiceLineItems = [];
+let currentLinkingMovementId = null;
+
+function openGenerateInvoiceForMovement(movementId) {
+  const mv = (stockMovements || []).find(m => String(m.id) === String(movementId));
+  if (!mv) return;
+
+  currentLinkingMovementId = mv.id;
+
+  const prod = (inventoryItems || []).find(p => (mv.productId && String(p.id) === String(mv.productId)) || (mv.sku && p.sku === mv.sku));
+
+  const prefill = {
+    product: prod || {
+      id: mv.productId || '',
+      name: mv.productName || 'Product',
+      sku: mv.sku || '',
+      hsn: '610910',
+      sellingPrice: mv.unitRate || 0,
+      costPrice: mv.unitRate || 0,
+      gstRate: 18
+    },
+    qty: Math.abs(mv.qty || 1)
+  };
+
+  openGenerateInvoiceModal(prefill);
+
+  // Since stock was already deducted for this movement, uncheck "Deduct from Inventory" to prevent double-deduction
+  const deductCheck = document.getElementById('genInvDeductStock');
+  if (deductCheck) deductCheck.checked = false;
+
+  // If already reflected in finance, uncheck "Reflect in Financial Records" to prevent double revenue
+  const reflectCheck = document.getElementById('genInvReflectFinance');
+  if (reflectCheck && mv.reflectedInFinance) reflectCheck.checked = false;
+}
+
+function openGenerateInvoiceModal(prefillData = null) {
+  const overlay = document.getElementById('generateInvoiceModalOverlay');
+  if (!overlay) return;
+
+  const sellerState = localStorage.getItem('lynxora_company_state') || 'Gujarat';
+
+  // Populate State dropdown
+  const stateSelect = document.getElementById('genInvBuyerState');
+  if (stateSelect) {
+    stateSelect.innerHTML = INDIAN_STATES.map(s => 
+      `<option value="${s}" ${s.toLowerCase() === sellerState.toLowerCase() ? 'selected' : ''}>${s}</option>`
+    ).join('');
+  }
+
+  // Next Invoice #
+  const nextNum = getNextInvoiceNumber();
+  const numInput = document.getElementById('genInvNumber');
+  if (numInput) numInput.value = nextNum;
+  const numBadge = document.getElementById('genInvNumberBadge');
+  if (numBadge) numBadge.textContent = nextNum;
+
+  // Date
+  const dateInput = document.getElementById('genInvDate');
+  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+  // Reset fields
+  const nameInput = document.getElementById('genInvBuyerName');
+  if (nameInput) nameInput.value = '';
+  const gstinInput = document.getElementById('genInvBuyerGstin');
+  if (gstinInput) gstinInput.value = '';
+  const phoneInput = document.getElementById('genInvBuyerPhone');
+  if (phoneInput) phoneInput.value = '';
+  const emailInput = document.getElementById('genInvBuyerEmail');
+  if (emailInput) emailInput.value = '';
+  const addressInput = document.getElementById('genInvBuyerAddress');
+  if (addressInput) addressInput.value = '';
+
+  // Setup initial item
+  if (prefillData && prefillData.product) {
+    const prod = prefillData.product;
+    genInvoiceLineItems = [{
+      id: Date.now(),
+      productId: prod.id,
+      name: prod.name || '',
+      sku: prod.sku || '',
+      hsn: prod.hsn || '610910',
+      qty: prefillData.qty || 1,
+      unitRate: prod.sellingPrice || prod.costPrice || 0,
+      gstRate: prod.gstRate != null ? prod.gstRate : 18
+    }];
+  } else {
+    genInvoiceLineItems = [{
+      id: Date.now(),
+      productId: '',
+      name: '',
+      sku: '',
+      hsn: '610910',
+      qty: 1,
+      unitRate: 0,
+      gstRate: 18
+    }];
+  }
+
+  renderGenerateInvoiceItems();
+  calculateGenerateInvoiceTotals();
+
+  overlay.style.display = 'flex';
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
+
+  if (nameInput) setTimeout(() => nameInput.focus(), 150);
+}
+
+function closeGenerateInvoiceModal() {
+  const overlay = document.getElementById('generateInvoiceModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function renderGenerateInvoiceItems() {
+  const container = document.getElementById('genInvItemsContainer');
+  if (!container) return;
+
+  container.innerHTML = genInvoiceLineItems.map((item, idx) => {
+    const prodOptions = (inventoryItems || []).map(p => 
+      `<option value="${p.id}" ${String(item.productId) === String(p.id) ? 'selected' : ''}>${escapeHtml(p.name)} (${p.sku || 'No SKU'} - Stock: ${p.quantity || 0})</option>`
+    ).join('');
+
+    const qty = Number(item.qty) || 1;
+    const rate = Number(item.unitRate) || 0;
+    const gstRate = Number(item.gstRate) || 0;
+    const taxable = qty * rate;
+    const tax = taxable * (gstRate / 100);
+    const total = taxable + tax;
+
+    return `
+      <div class="gen-inv-item-row" style="background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <div style="font-size: 12px; font-weight: 800; color: #2563eb; display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: #2563eb; color: white; align-items: center; justify-content: center; font-size: 11px;">${idx + 1}</span>
+            <span>Item #${idx + 1}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: #059669;">Line Total: ${formatCurrency(total)}</span>
+            ${genInvoiceLineItems.length > 1 ? `
+              <button type="button" class="btn btn-danger-sm" onclick="removeInvoiceLineItem(${idx})" style="padding: 2px 8px; font-size: 11px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer;">
+                ✕ Remove
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- Product Selector Dropdown -->
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px;">
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; font-weight: 700;">Select Catalogue Product (Optional)</label>
+            <select class="form-input" style="font-size: 12.5px; height: 38px;" onchange="onInvoiceProductSelect(${idx}, this.value)">
+              <option value="">-- Custom Item / Non-Catalogue Product --</option>
+              ${prodOptions}
+            </select>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; font-weight: 700;">Item / Service Name *</label>
+            <input type="text" class="form-input" placeholder="e.g. Cotton Polo T-Shirt" value="${escapeHtml(item.name || '')}" required style="font-size: 12.5px; height: 38px;" oninput="onInvoiceLineItemChange(${idx}, 'name', this.value)">
+          </div>
+        </div>
+
+        <!-- SKU, HSN, Qty, Rate, GST Slab -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr 1fr; gap: 8px;">
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; font-weight: 700;">SKU / Code</label>
+            <input type="text" class="form-input" placeholder="SKU-001" value="${escapeHtml(item.sku || '')}" style="font-size: 12px; height: 36px;" oninput="onInvoiceLineItemChange(${idx}, 'sku', this.value)">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; font-weight: 700;">HSN / SAC</label>
+            <input type="text" class="form-input" placeholder="610910" value="${escapeHtml(item.hsn || '610910')}" style="font-size: 12px; height: 36px;" oninput="onInvoiceLineItemChange(${idx}, 'hsn', this.value)">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; font-weight: 700;">Quantity *</label>
+            <input type="number" class="form-input" min="1" step="1" value="${item.qty || 1}" required style="font-size: 12px; height: 36px; font-weight: 700;" oninput="onInvoiceLineItemChange(${idx}, 'qty', this.value)">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; font-weight: 700;">Unit Rate (₹) *</label>
+            <input type="number" class="form-input" min="0" step="0.01" value="${item.unitRate || 0}" required style="font-size: 12px; height: 36px; font-weight: 700;" oninput="onInvoiceLineItemChange(${idx}, 'unitRate', this.value)">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 11px; font-weight: 700;">GST Slab</label>
+            <select class="form-input" style="font-size: 12px; height: 36px;" onchange="onInvoiceLineItemChange(${idx}, 'gstRate', this.value)">
+              <option value="0" ${item.gstRate === 0 ? 'selected' : ''}>0% (Exempt)</option>
+              <option value="5" ${item.gstRate === 5 ? 'selected' : ''}>5% GST</option>
+              <option value="12" ${item.gstRate === 12 ? 'selected' : ''}>12% GST</option>
+              <option value="18" ${item.gstRate === 18 ? 'selected' : ''}>18% GST</option>
+              <option value="28" ${item.gstRate === 28 ? 'selected' : ''}>28% GST</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addInvoiceLineItem() {
+  genInvoiceLineItems.push({
+    id: Date.now(),
+    productId: '',
+    name: '',
+    sku: '',
+    hsn: '610910',
+    qty: 1,
+    unitRate: 0,
+    gstRate: 18
+  });
+  renderGenerateInvoiceItems();
+  calculateGenerateInvoiceTotals();
+}
+
+function removeInvoiceLineItem(idx) {
+  if (genInvoiceLineItems.length <= 1) return;
+  genInvoiceLineItems.splice(idx, 1);
+  renderGenerateInvoiceItems();
+  calculateGenerateInvoiceTotals();
+}
+
+function onInvoiceProductSelect(idx, productId) {
+  const item = genInvoiceLineItems[idx];
+  if (!item) return;
+
+  if (!productId) {
+    item.productId = '';
+  } else {
+    const prod = (inventoryItems || []).find(p => String(p.id) === String(productId));
+    if (prod) {
+      item.productId = prod.id;
+      item.name = prod.name || '';
+      item.sku = prod.sku || '';
+      item.hsn = prod.hsn || '610910';
+      item.unitRate = prod.sellingPrice || prod.costPrice || 0;
+      if (prod.gstRate != null) item.gstRate = prod.gstRate;
+    }
+  }
+  renderGenerateInvoiceItems();
+  calculateGenerateInvoiceTotals();
+}
+
+function onInvoiceLineItemChange(idx, field, value) {
+  const item = genInvoiceLineItems[idx];
+  if (!item) return;
+
+  if (field === 'qty') item.qty = Math.max(1, parseInt(value) || 1);
+  else if (field === 'unitRate') item.unitRate = Math.max(0, parseFloat(value) || 0);
+  else if (field === 'gstRate') item.gstRate = parseFloat(value) || 0;
+  else item[field] = value;
+
+  calculateGenerateInvoiceTotals();
+}
+
+function onInvoiceGstinChange(gstin) {
+  if (!gstin || gstin.length < 2) return;
+  const stateCode = gstin.substring(0, 2);
+  const matchedState = GSTIN_STATE_CODES[stateCode];
+  if (matchedState) {
+    const stateSelect = document.getElementById('genInvBuyerState');
+    if (stateSelect) {
+      stateSelect.value = matchedState;
+      calculateGenerateInvoiceTotals();
+    }
+  }
+}
+
+function calculateGenerateInvoiceTotals() {
+  const sellerState = localStorage.getItem('lynxora_company_state') || 'Gujarat';
+  const buyerState = document.getElementById('genInvBuyerState')?.value || sellerState;
+  const isInterState = buyerState.trim().toLowerCase() !== sellerState.trim().toLowerCase();
+
+  const badge = document.getElementById('genInvSupplyTypeBadge');
+  if (badge) {
+    if (isInterState) {
+      badge.textContent = 'Inter-State (IGST 100%)';
+      badge.style.background = 'rgba(37,99,235,0.12)';
+      badge.style.color = '#2563eb';
+    } else {
+      badge.textContent = 'Intra-State (CGST 50% + SGST 50%)';
+      badge.style.background = 'rgba(5,150,105,0.12)';
+      badge.style.color = '#059669';
+    }
+  }
+
+  let totalTaxable = 0;
+  let totalTax = 0;
+
+  genInvoiceLineItems.forEach(it => {
+    const qty = Number(it.qty) || 1;
+    const rate = Number(it.unitRate) || 0;
+    const taxable = qty * rate;
+    const tax = taxable * ((Number(it.gstRate) || 0) / 100);
+    totalTaxable += taxable;
+    totalTax += tax;
+  });
+
+  const grandTotal = totalTaxable + totalTax;
+
+  setText('genInvTaxableSum', formatCurrency(totalTaxable));
+  setText('genInvGstSum', formatCurrency(totalTax));
+  setText('genInvGrandTotal', formatCurrency(grandTotal));
+  setText('genInvInWords', numberToIndianWords(Math.round(grandTotal)));
+}
+
+function handleGenerateInvoiceSubmit(event) {
+  if (event) event.preventDefault();
+
+  const buyerName = (document.getElementById('genInvBuyerName')?.value || '').trim();
+  if (!buyerName) {
+    showToast('Please enter customer / buyer name.', 'error');
+    return;
+  }
+
+  if (genInvoiceLineItems.length === 0) {
+    showToast('Please add at least one line item.', 'error');
+    return;
+  }
+
+  // Validate items
+  for (let i = 0; i < genInvoiceLineItems.length; i++) {
+    const it = genInvoiceLineItems[i];
+    if (!it.name || !it.name.trim()) {
+      showToast(`Please enter name for Item #${i + 1}`, 'error');
+      return;
+    }
+    if ((Number(it.qty) || 0) <= 0) {
+      showToast(`Invalid quantity for Item #${i + 1}`, 'error');
+      return;
+    }
+  }
+
+  const invoiceNumber = (document.getElementById('genInvNumber')?.value || '').trim() || getNextInvoiceNumber();
+  const invoiceDate = document.getElementById('genInvDate')?.value || new Date().toISOString().split('T')[0];
+  const channel = document.getElementById('genInvChannel')?.value || 'Bank Transfer';
+  const buyerGstin = (document.getElementById('genInvBuyerGstin')?.value || '').trim().toUpperCase();
+  const buyerState = document.getElementById('genInvBuyerState')?.value || 'Gujarat';
+  const buyerPhone = (document.getElementById('genInvBuyerPhone')?.value || '').trim();
+  const buyerEmail = (document.getElementById('genInvBuyerEmail')?.value || '').trim();
+  const buyerAddress = (document.getElementById('genInvBuyerAddress')?.value || '').trim();
+  const notes = (document.getElementById('genInvNotes')?.value || '').trim();
+
+  const reflectFinance = document.getElementById('genInvReflectFinance')?.checked ?? true;
+  const deductStock = document.getElementById('genInvDeductStock')?.checked ?? true;
+
+  const sellerState = localStorage.getItem('lynxora_company_state') || 'Gujarat';
+  const isInterState = buyerState.trim().toLowerCase() !== sellerState.trim().toLowerCase();
+
+  let totalTaxable = 0;
+  let totalCgst = 0;
+  let totalSgst = 0;
+  let totalIgst = 0;
+
+  const processedItems = genInvoiceLineItems.map(it => {
+    const qty = Number(it.qty) || 1;
+    const unitRate = Number(it.unitRate) || 0;
+    const gstRate = Number(it.gstRate) || 0;
+    const taxableAmount = qty * unitRate;
+    const lineTax = taxableAmount * (gstRate / 100);
+
+    let cgstAmount = 0, sgstAmount = 0, igstAmount = 0;
+    if (isInterState) {
+      igstAmount = lineTax;
+      totalIgst += lineTax;
+    } else {
+      cgstAmount = lineTax / 2;
+      sgstAmount = lineTax / 2;
+      totalCgst += cgstAmount;
+      totalSgst += sgstAmount;
+    }
+
+    totalTaxable += taxableAmount;
+
+    return {
+      productId: it.productId || null,
+      name: it.name.trim(),
+      sku: (it.sku || 'SKU').trim(),
+      hsn: (it.hsn || '610910').trim(),
+      qty: qty,
+      unitRate: unitRate,
+      priceType: 'exclusive',
+      taxableAmount: taxableAmount,
+      gstRate: gstRate,
+      cgstAmount: cgstAmount,
+      sgstAmount: sgstAmount,
+      igstAmount: igstAmount,
+      total: taxableAmount + lineTax
+    };
+  });
+
+  const taxTotal = isInterState ? totalIgst : (totalCgst + totalSgst);
+  const grossTotal = totalTaxable + taxTotal;
+
+  const invoiceId = 'INV_' + Date.now();
+  let financialRecordId = null;
+
+  // 1. Reflect in Financial Records if selected
+  if (reflectFinance && grossTotal > 0) {
+    financialRecordId = Date.now();
+    const itemSummary = processedItems.map(it => `${it.qty}x ${it.name}`).join(', ');
+    const salesRecord = {
+      id: financialRecordId,
+      date: invoiceDate,
+      description: `Sales: ${buyerName} [${invoiceNumber}] - ${itemSummary}`,
+      type: 'Income',
+      category: 'Sales Revenue',
+      partyName: buyerName,
+      source: 'Tax Invoice',
+      paymentMethod: channel === 'Cash' ? 'Cash' : 'Bank',
+      amount: grossTotal,
+      notes: `Generated via Tax Invoice ${invoiceNumber}. Taxable: ${formatCurrency(totalTaxable)}, GST: ${formatCurrency(taxTotal)}`
+    };
+    records.unshift(salesRecord);
+    saveRecords(`Recorded sales revenue from invoice ${invoiceNumber}`);
+    populateCategoryFilter();
+  }
+
+  // 2. Build Invoice Object
+  const newInvoice = {
+    id: invoiceId,
+    invoiceNumber: invoiceNumber,
+    date: invoiceDate,
+    createdAt: new Date().toISOString(),
+    seller: {
+      name: localStorage.getItem('lynxora_company') || 'Lynxora',
+      state: sellerState,
+      gstin: localStorage.getItem('lynxora_company_gstin') || '24AAACL1234F1Z5',
+      address: localStorage.getItem('lynxora_company_address') || '',
+      phone: localStorage.getItem('lynxora_company_phone') || '',
+      email: localStorage.getItem('lynxora_company_email') || '',
+      bankName: localStorage.getItem('lynxora_bank_name') || '',
+      bankAccount: localStorage.getItem('lynxora_bank_account') || '',
+      bankIfsc: localStorage.getItem('lynxora_bank_ifsc') || '',
+      bankUpi: localStorage.getItem('lynxora_bank_upi') || ''
+    },
+    buyer: {
+      name: buyerName,
+      phone: buyerPhone,
+      email: buyerEmail,
+      address: buyerAddress,
+      gstin: buyerGstin,
+      state: buyerState
+    },
+    isInterState: isInterState,
+    items: processedItems,
+    taxableAmount: totalTaxable,
+    cgstAmount: totalCgst,
+    sgstAmount: totalSgst,
+    igstAmount: totalIgst,
+    taxTotal: taxTotal,
+    grossTotal: grossTotal,
+    totalInWords: numberToIndianWords(Math.round(grossTotal)),
+    paymentChannel: channel,
+    notes: notes,
+    recordId: financialRecordId
+  };
+
+  invoices.unshift(newInvoice);
+  saveInvoices(`Created Tax Invoice ${invoiceNumber}`);
+
+  // 3. Deduct from Inventory & Log Stock Movements if selected
+  if (deductStock) {
+    let inventoryModified = false;
+    processedItems.forEach(it => {
+      const prod = (inventoryItems || []).find(p => (it.productId && String(p.id) === String(it.productId)) || (it.sku && p.sku === it.sku));
+      if (prod) {
+        prod.quantity = Math.max(0, (Number(prod.quantity) || 0) - it.qty);
+        inventoryModified = true;
+
+        stockMovements.unshift({
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          date: new Date().toLocaleString(),
+          type: 'SALE',
+          productId: prod.id,
+          productName: prod.name,
+          sku: prod.sku,
+          qty: it.qty,
+          unitRate: it.unitRate,
+          totalAmount: it.total,
+          channel: channel,
+          reason: `Sold via Tax Invoice ${invoiceNumber}`,
+          reflectedInFinance: reflectFinance,
+          recordId: financialRecordId,
+          invoiceId: invoiceId
+        });
+      }
+    });
+
+    if (inventoryModified) {
+      saveInventory();
+      saveStockMovements(`Deducted stock for invoice ${invoiceNumber}`);
+    }
+  }
+
+  // If this invoice was generated for an existing stock movement, associate it
+  if (currentLinkingMovementId) {
+    const linkedMv = (stockMovements || []).find(m => String(m.id) === String(currentLinkingMovementId));
+    if (linkedMv) {
+      linkedMv.invoiceId = invoiceId;
+      if (financialRecordId && !linkedMv.recordId) {
+        linkedMv.recordId = financialRecordId;
+        linkedMv.reflectedInFinance = reflectFinance;
+      }
+      saveStockMovements(`Linked invoice ${invoiceNumber} to stock movement`);
+    }
+    currentLinkingMovementId = null;
+  }
+
+  // 4. Update UI
+  updateDashboard();
+  renderInventory();
+  renderStockMovementsTable();
+  renderRecordsTable();
+  updateInvoicesHeaderBadge();
+
+  closeGenerateInvoiceModal();
+  openTaxInvoiceModal(invoiceId);
+
+  showToast(`Tax Invoice ${invoiceNumber} created successfully! ✓`, 'success');
+}
+
+function openInvoicesManagerModal() {
+  const overlay = document.getElementById('invoicesManagerModalOverlay');
+  if (!overlay) return;
+
+  renderInvoicesListModal();
+
+  overlay.style.display = 'flex';
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeInvoicesManagerModal() {
+  const overlay = document.getElementById('invoicesManagerModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function handleInvoicesManagerSearch(query) {
+  renderInvoicesListModal(query);
+}
+
+function renderInvoicesListModal(filterQuery = '') {
+  const tbody = document.getElementById('invoicesManagerTableBody');
+  const countBadge = document.getElementById('invMgrCountBadge');
+  const totalCountEl = document.getElementById('invMgrTotalCount');
+  const totalValEl = document.getElementById('invMgrTotalValue');
+  const totalGstEl = document.getElementById('invMgrTotalGst');
+
+  const totalInvoices = invoices.length;
+  const totalVal = invoices.reduce((s, i) => s + (Number(i.grossTotal) || 0), 0);
+  const totalGst = invoices.reduce((s, i) => s + (Number(i.taxTotal) || 0), 0);
+
+  if (countBadge) countBadge.textContent = `${totalInvoices} Invoices`;
+  if (totalCountEl) totalCountEl.textContent = totalInvoices.toString();
+  if (totalValEl) totalValEl.textContent = formatCurrency(totalVal);
+  if (totalGstEl) totalGstEl.textContent = formatCurrency(totalGst);
+  updateInvoicesHeaderBadge();
+
+  if (!tbody) return;
+
+  const query = (filterQuery || '').toLowerCase().trim();
+  const filtered = query
+    ? invoices.filter(inv => 
+        (inv.invoiceNumber && inv.invoiceNumber.toLowerCase().includes(query)) ||
+        (inv.buyer && inv.buyer.name && inv.buyer.name.toLowerCase().includes(query)) ||
+        (inv.buyer && inv.buyer.gstin && inv.buyer.gstin.toLowerCase().includes(query)) ||
+        (inv.buyer && inv.buyer.address && inv.buyer.address.toLowerCase().includes(query)) ||
+        (inv.date && inv.date.includes(query))
+      )
+    : invoices;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-muted);font-size:13.5px;">${query ? 'No invoices match your search query.' : 'No tax invoices created yet. Click "+ Generate Invoice" to create one!'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(inv => {
+    const itemsCount = (inv.items || []).length;
+    const totalUnits = (inv.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0);
+    const supplyState = inv.buyer?.state || 'Local';
+    const isInterState = inv.isInterState;
+
+    return `<tr>
+      <td style="font-weight:800;color:#2563eb;font-family:monospace;font-size:13px;">${escapeHtml(inv.invoiceNumber || 'INV')}</td>
+      <td style="font-size:12.5px;color:var(--text-2);">${inv.date || '—'}</td>
+      <td>
+        <div style="font-weight:700;color:var(--text-1);">${escapeHtml(inv.buyer?.name || 'Customer')}</div>
+        ${inv.buyer?.gstin ? `<div style="font-size:11px;color:var(--text-muted);font-family:monospace;">GSTIN: ${escapeHtml(inv.buyer.gstin)}</div>` : ''}
+      </td>
+      <td>
+        <span style="font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:6px;background:${isInterState ? 'rgba(37,99,235,0.1)' : 'rgba(5,150,105,0.1)'};color:${isInterState ? '#2563eb' : '#059669'};">
+          ${escapeHtml(supplyState)} (${isInterState ? 'IGST' : 'CGST+SGST'})
+        </span>
+      </td>
+      <td style="font-size:12px;color:var(--text-2);">${itemsCount} item(s) • ${totalUnits} units</td>
+      <td style="text-align:right;font-size:12.5px;">${formatCurrency(inv.taxableAmount || 0)}</td>
+      <td style="text-align:right;font-size:12.5px;font-weight:700;color:#2563eb;">${formatCurrency(inv.taxTotal || 0)}</td>
+      <td style="text-align:right;font-weight:800;color:#059669;font-size:13.5px;">${formatCurrency(inv.grossTotal || 0)}</td>
+      <td style="text-align:center;">
+        <div style="display:inline-flex;gap:6px;align-items:center;">
+          <button type="button" class="btn" onclick="closeInvoicesManagerModal(); openTaxInvoiceModal('${inv.id}')" title="View, Print & Download PDF" style="background:#2563eb;color:white;font-weight:700;padding:4px 10px;border-radius:6px;font-size:11.5px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(37,99,235,0.3);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>View / PDF</span>
+          </button>
+          <button type="button" class="btn btn-danger-sm" onclick="deleteTaxInvoice('${inv.id}')" title="Delete Tax Invoice" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;padding:4px 8px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Delete</span>
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateInvoicesHeaderBadge() {
+  const el = document.getElementById('invHeaderCount');
+  if (el) el.textContent = invoices.length.toString();
+}
+
+function deleteTaxInvoice(invoiceId) {
+  const invIdStr = String(invoiceId);
+  const inv = invoices.find(i => String(i.id) === invIdStr);
+  if (!inv) return;
+
+  openConfirmModal({
+    title: 'Delete Tax Invoice?',
+    message: `Are you sure you want to delete invoice <b>${escapeHtml(inv.invoiceNumber || invIdStr)}</b> for <b>${escapeHtml(inv.buyer?.name || 'Customer')}</b> (${formatCurrency(inv.grossTotal || 0)})?`,
+    detailsHtml: `<div class="confirm-preview-row"><span class="confirm-preview-label">Invoice:</span><span class="confirm-preview-val"><b>${escapeHtml(inv.invoiceNumber || '')}</b> (${inv.date || ''})</span></div><div class="confirm-preview-row"><span class="confirm-preview-label">Buyer:</span><span class="confirm-preview-val">${escapeHtml(inv.buyer?.name || '')}</span></div><div class="confirm-preview-row"><span class="confirm-preview-label">Total Amount:</span><span class="confirm-preview-val" style="color:#059669;font-weight:800;">${formatCurrency(inv.grossTotal || 0)}</span></div>`,
+    actionText: 'Yes, Delete Invoice',
+    actionClass: 'btn-danger',
+    onConfirm: () => {
+      if (!deletedInvoiceIds.includes(invIdStr)) {
+        deletedInvoiceIds.push(invIdStr);
+        saveDeletedInvoiceIds();
+      }
+      invoices = invoices.filter(i => String(i.id) !== invIdStr);
+      saveInvoices(`Deleted Tax Invoice ${inv.invoiceNumber || invIdStr}`);
+      renderInvoicesListModal();
+      updateDashboard();
+      showToast(`Invoice ${inv.invoiceNumber || ''} deleted successfully.`, 'info');
+    }
+  });
 }
 
 // ==========================================
@@ -4096,6 +4943,8 @@ function loadStockMovements() {
   if (saved) {
     try {
       stockMovements = JSON.parse(saved) || [];
+      const delSet = new Set((deletedMovementIds || []).map(String));
+      stockMovements = stockMovements.filter(m => m && m.id != null && !delSet.has(String(m.id)));
     } catch { stockMovements = []; }
   } else {
     stockMovements = [];
@@ -4109,26 +4958,90 @@ function saveStockMovements(actionDesc = '') {
   }
 }
 
+function downloadTaxInvoicePDFById(invoiceId) {
+  const invIdStr = String(invoiceId);
+  const inv = (invoices || []).find(i => String(i.id) === invIdStr || (i.invoiceNumber && i.invoiceNumber === invIdStr));
+  if (!inv) {
+    showToast('Invoice record not found.', 'error');
+    return;
+  }
+  openTaxInvoiceModal(inv.id);
+  setTimeout(() => {
+    downloadTaxInvoicePDF();
+  }, 250);
+}
+
+let stockMovementsSearchQuery = '';
+let stockMovementsFilterType = 'ALL';
+
+function handleStockMovementsSearch(query) {
+  stockMovementsSearchQuery = (query || '').trim().toLowerCase();
+  renderStockMovementsTable();
+}
+
+function handleStockMovementsFilter(type) {
+  stockMovementsFilterType = type || 'ALL';
+  renderStockMovementsTable();
+}
+
 function renderStockMovementsTable() {
   const tbody = document.getElementById('stockMovementsTableBody');
   const badge = document.getElementById('stockMovementsCountBadge');
+  const statsEl = document.getElementById('stockMovementsFilterStats');
   if (badge) badge.textContent = `${stockMovements.length} Entries`;
   if (!tbody) return;
 
   if (stockMovements.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:#94a3b8;">No stock sales or losses recorded yet. Click "&#128176; Sell" or "&#9888;&#65039; Loss" on any product to record a transaction!</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--text-muted);">No stock sales or losses recorded yet. Click "+ Generate Invoice", "Sell" or "Loss" on any product to record a transaction!</td></tr>`;
+    if (statsEl) statsEl.textContent = 'Showing 0 entries';
     return;
   }
 
-  const sorted = [...stockMovements].sort((a, b) => (b.id || 0) - (a.id || 0));
+  // Filter operations
+  let filtered = [...stockMovements];
+  if (stockMovementsFilterType === 'INVOICE') {
+    filtered = filtered.filter(m => !!m.invoiceId);
+  } else if (stockMovementsFilterType !== 'ALL') {
+    filtered = filtered.filter(m => m.type === stockMovementsFilterType);
+  }
+
+  // Search filter
+  if (stockMovementsSearchQuery) {
+    const q = stockMovementsSearchQuery;
+    filtered = filtered.filter(m => {
+      const inv = (invoices || []).find(i => String(i.id) === String(m.invoiceId) || (i.invoiceNumber && i.invoiceNumber === String(m.invoiceId)));
+      return (m.productName && m.productName.toLowerCase().includes(q)) ||
+             (m.sku && m.sku.toLowerCase().includes(q)) ||
+             (m.reason && m.reason.toLowerCase().includes(q)) ||
+             (m.channel && m.channel.toLowerCase().includes(q)) ||
+             (m.invoiceId && String(m.invoiceId).toLowerCase().includes(q)) ||
+             (inv && inv.invoiceNumber && inv.invoiceNumber.toLowerCase().includes(q)) ||
+             (inv && inv.buyer && inv.buyer.name && inv.buyer.name.toLowerCase().includes(q));
+    });
+  }
+
+  if (statsEl) {
+    if (stockMovementsSearchQuery || stockMovementsFilterType !== 'ALL') {
+      statsEl.textContent = `Showing ${filtered.length} of ${stockMovements.length} entries`;
+    } else {
+      statsEl.textContent = `Showing all ${stockMovements.length} entries`;
+    }
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--text-muted);">No movements match your search or filter.</td></tr>`;
+    return;
+  }
+
+  const sorted = filtered.sort((a, b) => (b.id || 0) - (a.id || 0));
   tbody.innerHTML = sorted.map(m => {
     const isSale = m.type === 'SALE';
     const isLoss = m.type === 'LOSS';
     const opBadge = isSale
-      ? '<span style="background:#dcfce7;color:#15803d;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:800;">&#128176; Customer Sale</span>'
+      ? '<span style="background:#dcfce7;color:#15803d;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Customer Sale</span>'
       : isLoss
-      ? '<span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:800;">&#9888;&#65039; Stock Loss</span>'
-      : '<span style="background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:800;">&#128230; Restock</span>';
+      ? '<span style="background:#fee2e2;color:#991b1b;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Stock Loss</span>'
+      : '<span style="background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:6px;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> Restock</span>';
 
     const impactColor = isSale ? '#059669' : isLoss ? '#dc2626' : '#2563eb';
     const impactSign = isSale ? '+' : isLoss ? '&minus;' : '+';
@@ -4138,21 +5051,48 @@ function renderStockMovementsTable() {
       ? `<span style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">&#10003; Dashboard &amp; Records</span>`
       : `<span style="color:#94a3b8;font-size:11px;">Stock Only</span>`;
 
-    const invoiceCell = m.invoiceId
-      ? `<button type="button" class="btn" onclick="openTaxInvoiceModal('${m.invoiceId}')" title="View &amp; Print Tax Invoice" style="background:#2563eb;color:white;font-weight:700;padding:4px 10px;border-radius:6px;font-size:11px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(37,99,235,0.3);"><span>&#129534; Invoice</span></button>`
-      : `<span style="color:#94a3b8;font-size:11.5px;">—</span>`;
+    let invoiceCell = `<span style="color:var(--text-muted);font-size:11.5px;">—</span>`;
+    if (m.invoiceId) {
+      const inv = (invoices || []).find(i => String(i.id) === String(m.invoiceId) || (i.invoiceNumber && i.invoiceNumber === String(m.invoiceId)));
+      const invNum = inv ? inv.invoiceNumber : m.invoiceId;
+      const buyerName = inv?.buyer?.name || '';
+      invoiceCell = `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span class="badge" style="font-family:monospace;font-size:11px;font-weight:800;color:#2563eb;background:rgba(37,99,235,0.1);padding:2px 7px;border-radius:4px;border:1px solid rgba(37,99,235,0.25);" title="${escapeHtml(buyerName ? 'Buyer: ' + buyerName : invNum)}">
+            ${escapeHtml(invNum)}
+          </span>
+          <div style="display:inline-flex;align-items:center;gap:4px;">
+            <button type="button" class="btn" onclick="openTaxInvoiceModal('${m.invoiceId}')" title="Check &amp; View Tax Invoice" style="background:#2563eb;color:white;font-weight:700;padding:3px 8px;border-radius:6px;font-size:11px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;box-shadow:0 1px 3px rgba(37,99,235,0.25);">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Check</span>
+            </button>
+            <button type="button" class="btn" onclick="downloadTaxInvoicePDFById('${m.invoiceId}')" title="Download Invoice PDF (A4)" style="background:#d97706;color:white;font-weight:700;padding:3px 8px;border-radius:6px;font-size:11px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;box-shadow:0 1px 3px rgba(217,119,6,0.25);">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download</span>
+            </button>
+          </div>
+        </div>
+      `;
+    } else if (isSale) {
+      invoiceCell = `
+        <button type="button" class="btn btn-ghost" onclick="openGenerateInvoiceForMovement('${m.id}')" title="Generate GST Tax Invoice for this Customer Sale" style="padding:4px 9px;font-size:11px;font-weight:700;color:#2563eb;border:1px dashed rgba(37,99,235,0.4);border-radius:6px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;background:rgba(37,99,235,0.04);">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>+ Invoice</span>
+        </button>
+      `;
+    }
 
-    const deleteCell = `<button type="button" class="btn btn-danger-sm" onclick="deleteStockMovement(${m.id})" title="Delete Movement Record &amp; Reconcile Stock" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;padding:4px 8px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s;box-shadow:0 1px 2px rgba(220,38,38,0.15);" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'"><span>&#128465; Delete</span></button>`;
+    const deleteCell = `<button type="button" class="btn btn-danger-sm" onclick="deleteStockMovement('${m.id}')" title="Delete Movement Record &amp; Reconcile Stock" style="background:#fee2e2;color:#dc2626;border:1px solid #fecaca;padding:4px 8px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s;box-shadow:0 1px 2px rgba(220,38,38,0.15);" onmouseover="this.style.background='#fca5a5'" onmouseout="this.style.background='#fee2e2'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>Delete</span></button>`;
 
     return `<tr>
-      <td style="font-size:12px;color:#64748b;">${m.date || ''}</td>
+      <td style="font-size:12px;color:var(--text-2);">${m.date || ''}</td>
       <td>${opBadge}</td>
-      <td><b>${escapeHtml(m.productName || '')}</b> <span style="font-size:11px;color:#64748b;">(${escapeHtml(m.sku || '')})</span></td>
+      <td><b>${escapeHtml(m.productName || '')}</b> <span style="font-size:11px;color:var(--text-muted);">(${escapeHtml(m.sku || '')})</span></td>
       <td style="font-weight:800;text-align:center;">${m.qty || 0}</td>
       <td>${formatCurrency(m.unitRate || 0)}</td>
       <td style="font-weight:800;color:${impactColor};">${impactText}</td>
       <td>${reflectedBadge}</td>
-      <td style="font-size:12px;color:#475569;">${escapeHtml(m.reason || m.channel || '—')}</td>
+      <td style="font-size:12px;color:var(--text-2);">${escapeHtml(m.reason || m.channel || '—')}</td>
       <td style="text-align:center;">${invoiceCell}</td>
       <td style="text-align:center;">${deleteCell}</td>
     </tr>`;
@@ -4160,7 +5100,8 @@ function renderStockMovementsTable() {
 }
 
 function deleteStockMovement(movementId) {
-  const m = stockMovements.find(item => item.id === movementId);
+  const mvIdStr = String(movementId);
+  const m = stockMovements.find(item => String(item.id) === mvIdStr);
   if (!m) return;
 
   const isSale = m.type === 'SALE';
@@ -4170,11 +5111,11 @@ function deleteStockMovement(movementId) {
   
   let reversalMsg = '';
   if (isSale) {
-    reversalMsg = `Returning +${m.qty} unit(s) back to available inventory.`;
+    reversalMsg = `Returning +${m.qty} unit(s) back to available inventory catalogue.`;
   } else if (isLoss) {
-    reversalMsg = `Restoring +${m.qty} unit(s) back to available inventory.`;
+    reversalMsg = `Restoring +${m.qty} unit(s) back to available inventory catalogue.`;
   } else {
-    reversalMsg = `Deducting -${m.qty} unit(s) from inventory.`;
+    reversalMsg = `Deducting -${m.qty} unit(s) from inventory catalogue.`;
   }
 
   let financeMsg = '';
@@ -4199,7 +5140,7 @@ function deleteStockMovement(movementId) {
     actionClass: 'btn-danger',
     onConfirm: () => {
       // 1. Revert Inventory quantity
-      const prod = inventoryItems.find(p => p.id === m.productId || p.sku === m.sku);
+      const prod = inventoryItems.find(p => (m.productId && String(p.id) === String(m.productId)) || (m.sku && p.sku === m.sku));
       if (prod) {
         if (isSale || isLoss) {
           prod.quantity = (Number(prod.quantity) || 0) + Number(m.qty || 0);
@@ -4211,27 +5152,70 @@ function deleteStockMovement(movementId) {
 
       // 2. Remove financial record from records array if linked
       if (m.recordId) {
-        records = records.filter(r => r.id !== m.recordId);
-        saveRecords();
+        const recIdStr = String(m.recordId);
+        if (!deletedRecordIds.includes(recIdStr)) {
+          deletedRecordIds.push(recIdStr);
+          saveDeletedRecordIds();
+        }
+        records = records.filter(r => String(r.id) !== recIdStr);
+        saveRecords('Reconciled deleted stock movement');
         populateCategoryFilter();
       }
 
       // 3. Remove invoice if linked
       if (m.invoiceId) {
-        invoices = invoices.filter(inv => inv.id !== m.invoiceId);
-        saveInvoices();
+        const invIdStr = String(m.invoiceId);
+        if (!deletedInvoiceIds.includes(invIdStr)) {
+          deletedInvoiceIds.push(invIdStr);
+          saveDeletedInvoiceIds();
+        }
+        invoices = invoices.filter(inv => String(inv.id) !== invIdStr);
+        saveInvoices('Deleted invoice linked to deleted movement');
       }
 
-      // 4. Remove from stockMovements array
-      stockMovements = stockMovements.filter(item => item.id !== movementId);
-      saveStockMovements();
+      // 4. Mark movement as deleted in tombstones
+      if (!deletedMovementIds.includes(mvIdStr)) {
+        deletedMovementIds.push(mvIdStr);
+        saveDeletedMovementIds();
+      }
 
-      // 5. Re-render UI
+      // 5. Remove from stockMovements array
+      stockMovements = stockMovements.filter(item => String(item.id) !== mvIdStr);
+      saveStockMovements('Deleted stock movement ' + mvIdStr);
+
+      // 6. Re-render UI
       updateDashboard();
       renderInventory();
       renderStockMovementsTable();
       renderRecordsTable();
+      updateInvoicesHeaderBadge();
       showToast('Stock movement deleted. Inventory stock and financials reconciled! ✓', 'success');
+    }
+  });
+}
+
+function promptClearAllStockMovements() {
+  if (stockMovements.length === 0) {
+    showToast('No stock movements to clear.', 'info');
+    return;
+  }
+  openConfirmModal({
+    title: 'Clear All Stock Movement Logs?',
+    message: `You are about to delete all <b>${stockMovements.length}</b> stock movement entries from this log. Your current inventory stock quantities and financial records will remain intact.`,
+    actionText: 'Yes, Clear All Logs',
+    actionClass: 'btn-danger',
+    onConfirm: () => {
+      stockMovements.forEach(m => {
+        if (m && m.id != null) {
+          const sId = String(m.id);
+          if (!deletedMovementIds.includes(sId)) deletedMovementIds.push(sId);
+        }
+      });
+      saveDeletedMovementIds();
+      stockMovements = [];
+      saveStockMovements('Cleared all stock movements');
+      renderStockMovementsTable();
+      showToast('All stock movement records cleared successfully. ✓', 'info');
     }
   });
 }
@@ -4351,15 +5335,15 @@ function renderInventory() {
 
     let statusHtml = '';
     if (qty === 0) {
-      statusHtml = '<span class="stock-pill stock-pill-out">🚫 0 Out of Stock</span>';
+      statusHtml = '<span class="stock-pill stock-pill-out">0 Out of Stock</span>';
     } else if (qty <= minS) {
-      statusHtml = `<span class="stock-pill stock-pill-low">⚠️ ${qty} Low Stock</span>`;
+      statusHtml = `<span class="stock-pill stock-pill-low">${qty} Low Stock</span>`;
     } else {
       statusHtml = `<span class="stock-pill stock-pill-in">✓ ${qty} In Stock</span>`;
     }
 
     const supplierBadge = item.supplier
-      ? `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid #bfdbfe;">🏢 ${escapeHtml(item.supplier)}</span>`
+      ? `<span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid #bfdbfe;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M9 21V7M15 21V7M9 3h6v4H9z"/></svg> ${escapeHtml(item.supplier)}</span>`
       : '<span style="color:#94a3b8;">—</span>';
 
     return `<tr>
@@ -4374,8 +5358,9 @@ function renderInventory() {
       <td data-label="Valuation" style="font-weight:800;color:#059669;">${formatCurrency(totalVal)}</td>
       <td data-label="Actions" style="white-space:nowrap;">
         <div class="inv-action-cell">
-          <button type="button" class="inv-sell-btn" onclick="openStockAdjustModal(${item.id}, 'SALE')" title="Record Customer Sale &amp; Generate Invoice">
-            <span>&#128176; Sell</span>
+          <button type="button" class="inv-sell-btn" onclick="openStockAdjustModal(${item.id}, 'SALE')" title="Record Customer Sale &amp; Generate Invoice" style="display:inline-flex;align-items:center;gap:4px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Sell</span>
           </button>
           ${!isViewer ? `
           <button type="button" class="inv-action-dots-btn" onclick="openProductActionMenu(event, ${item.id})" title="More Actions (Edit, Loss, Restock, Delete)">
@@ -4412,19 +5397,19 @@ function openProductActionMenu(event, productId) {
 
   menu.dataset.activeProductId = productId;
   menu.innerHTML = `
-    <button type="button" onclick="closeProductActionMenu(); openInventoryModal(${item.id})">
-      <span style="font-size:14px;">✏️</span> Edit Product Details
+    <button type="button" onclick="closeProductActionMenu(); openInventoryModal(${item.id})" style="display:flex;align-items:center;gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Edit Product Details
     </button>
-    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal(${item.id}, 'IN')">
-      <span style="font-size:14px;">📦</span> Restock / Adjust (&plusmn;)
+    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal(${item.id}, 'IN')" style="display:flex;align-items:center;gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Restock / Adjust (&plusmn;)
     </button>
-    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal(${item.id}, 'LOSS')">
-      <span style="font-size:14px;">⚠️</span> Record Stock Loss / Damage
+    <button type="button" onclick="closeProductActionMenu(); openStockAdjustModal(${item.id}, 'LOSS')" style="display:flex;align-items:center;gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Record Stock Loss / Damage
     </button>
     ${canDelete ? `
     <div class="product-action-divider"></div>
-    <button type="button" class="menu-danger" onclick="closeProductActionMenu(); deleteInventoryProduct(${item.id})">
-      <span style="font-size:14px;">🗑️</span> Delete Product
+    <button type="button" class="menu-danger" onclick="closeProductActionMenu(); deleteInventoryProduct(${item.id})" style="display:flex;align-items:center;gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Delete Product
     </button>` : ''}
   `;
 
@@ -4495,7 +5480,7 @@ function openInventoryDrilldown(type) {
 
   const potentialProfit = Math.max(0, totalRetailValuation - totalCostValuation);
 
-  let icon = '📦';
+  let iconSvg = '';
   let title = '';
   let subLabel = '';
   let metricLabel = '';
@@ -4507,7 +5492,7 @@ function openInventoryDrilldown(type) {
   if (searchInput) searchInput.value = '';
 
   if (type === 'skus') {
-    icon = '📦';
+    iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
     title = 'Total SKUs / Products Catalogue';
     subLabel = 'Complete overview of all active product lines and variants';
     metricLabel = 'Total Cost Asset Valuation';
@@ -4527,7 +5512,7 @@ function openInventoryDrilldown(type) {
       <th style="text-align:center;">Action</th>
     </tr>`;
   } else if (type === 'quantity') {
-    icon = '📊';
+    iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
     title = 'Total Stock Units Breakdown';
     subLabel = 'Live quantity breakdown and stock level status by product';
     metricLabel = 'Total Available Stock Units';
@@ -4546,7 +5531,7 @@ function openInventoryDrilldown(type) {
       <th style="text-align:center;">Action</th>
     </tr>`;
   } else if (type === 'cost_valuation') {
-    icon = '💰';
+    iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>';
     title = 'Stock Valuation Breakdown (At Cost)';
     subLabel = 'Total capital invested in inventory based on unit purchase cost';
     metricLabel = 'Total Asset Valuation (Cost)';
@@ -4564,7 +5549,7 @@ function openInventoryDrilldown(type) {
       <th style="text-align:center;">Action</th>
     </tr>`;
   } else if (type === 'retail_valuation') {
-    icon = '📈';
+    iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
     title = 'Estimated Retail Value & Potential Gross Profit';
     subLabel = 'Projected gross revenue and earnings upon selling available inventory';
     metricLabel = 'Estimated Retail Revenue';
@@ -4583,12 +5568,12 @@ function openInventoryDrilldown(type) {
       <th style="text-align:center;">Action</th>
     </tr>`;
   } else if (type === 'low_stock') {
-    icon = '⚠️';
+    iconSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
     title = 'Low Stock & Reorder Alert List';
     subLabel = 'Products that have reached or fallen below minimum safety reorder threshold';
     metricLabel = 'Products Needing Restock';
     metricValue = `${lowStockCount} Items`;
-    countPill = lowStockCount > 0 ? '⚠️ Restock Required' : '✓ All Stock Healthy';
+    countPill = lowStockCount > 0 ? 'Restock Required' : '✓ All Stock Healthy';
     currentInvDrilldownList = inventoryItems.filter(item => (Number(item.quantity) || 0) <= (Number(item.minStock) || 10));
     theadHtml = `<tr>
       <th>SKU</th>
@@ -4602,7 +5587,8 @@ function openInventoryDrilldown(type) {
     </tr>`;
   }
 
-  setText('invDrilldownIcon', icon);
+  const iconEl = document.getElementById('invDrilldownIcon');
+  if (iconEl) iconEl.innerHTML = iconSvg;
   setText('invDrilldownTitle', title);
   setText('invDrilldownSubLabel', subLabel);
   setText('invDrilldownMetricLabel', metricLabel);
@@ -4622,7 +5608,7 @@ function renderInvDrilldownRows(list) {
 
   if (!list || list.length === 0) {
     if (currentInvDrilldownType === 'low_stock') {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:36px;color:#059669;font-weight:700;">🎉 All products are healthy! No items currently need reordering.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:36px;color:#059669;font-weight:700;">All products are healthy! No items currently need reordering.</td></tr>`;
     } else {
       tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:36px;color:#94a3b8;">No products found matching your search.</td></tr>`;
     }
@@ -4644,9 +5630,9 @@ function renderInvDrilldownRows(list) {
     const pctOfTotal = totalCostAll > 0 ? ((totalVal / totalCostAll) * 100).toFixed(1) : '0';
 
     let statusPill = qty === 0
-      ? '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">🚫 Out of Stock</span>'
+      ? '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">Out of Stock</span>'
       : (qty <= minS
-      ? `<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">⚠️ Low Stock (${qty})</span>`
+      ? `<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">Low Stock (${qty})</span>`
       : `<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">✓ In Stock (${qty})</span>`);
 
     if (currentInvDrilldownType === 'skus') {
@@ -4661,7 +5647,10 @@ function renderInvDrilldownRows(list) {
         <td style="font-weight:800;text-align:center;">${qty}</td>
         <td style="font-weight:800;color:#059669;">${formatCurrency(totalVal)}</td>
         <td style="text-align:center;white-space:nowrap;">
-          <button type="button" class="btn btn-primary" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'SALE');" style="padding:4px 8px;font-size:11px;font-weight:700;background:#059669;border-color:#059669;">💰 Sell</button>
+          <button type="button" class="btn btn-primary" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'SALE');" style="padding:4px 10px;font-size:11px;font-weight:700;background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Sell</span>
+          </button>
         </td>
       </tr>`;
     } else if (currentInvDrilldownType === 'quantity') {
@@ -4675,7 +5664,10 @@ function renderInvDrilldownRows(list) {
         <td><span style="font-family:monospace;font-size:11.5px;background:#f1f5f9;padding:2px 6px;border-radius:4px;">${escapeHtml(item.shelfLocation || 'Main Warehouse')}</span></td>
         <td style="font-weight:700;color:#059669;">${formatCurrency(totalVal)}</td>
         <td style="text-align:center;white-space:nowrap;">
-          <button type="button" class="btn btn-ghost" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'IN');" style="padding:4px 8px;font-size:11px;font-weight:700;">📦 Restock</button>
+          <button type="button" class="btn btn-ghost" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'IN');" style="padding:4px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>Restock</span>
+          </button>
         </td>
       </tr>`;
     } else if (currentInvDrilldownType === 'cost_valuation') {
@@ -4688,7 +5680,10 @@ function renderInvDrilldownRows(list) {
         <td style="font-weight:800;color:#059669;font-size:13.5px;">${formatCurrency(totalVal)}</td>
         <td><div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:${Math.min(100, pctOfTotal)}%;height:100%;background:#059669;"></div></div><span style="font-size:11px;font-weight:700;color:#64748b;">${pctOfTotal}%</span></div></td>
         <td style="text-align:center;white-space:nowrap;">
-          <button type="button" class="btn btn-primary" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'SALE');" style="padding:4px 8px;font-size:11px;font-weight:700;background:#059669;border-color:#059669;">💰 Sell</button>
+          <button type="button" class="btn btn-primary" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'SALE');" style="padding:4px 10px;font-size:11px;font-weight:700;background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Sell</span>
+          </button>
         </td>
       </tr>`;
     } else if (currentInvDrilldownType === 'retail_valuation') {
@@ -4702,7 +5697,10 @@ function renderInvDrilldownRows(list) {
         <td style="font-weight:800;color:#d97706;">${formatCurrency(totalRetail)}</td>
         <td style="font-weight:800;color:#059669;font-size:13.5px;">+${formatCurrency(profit)}</td>
         <td style="text-align:center;white-space:nowrap;">
-          <button type="button" class="btn btn-primary" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'SALE');" style="padding:4px 8px;font-size:11px;font-weight:700;background:#059669;border-color:#059669;">💰 Sell</button>
+          <button type="button" class="btn btn-primary" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'SALE');" style="padding:4px 10px;font-size:11px;font-weight:700;background:#059669;border-color:#059669;display:inline-flex;align-items:center;gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Sell</span>
+          </button>
         </td>
       </tr>`;
     } else if (currentInvDrilldownType === 'low_stock') {
@@ -4710,13 +5708,16 @@ function renderInvDrilldownRows(list) {
       return `<tr>
         <td><span class="inv-sku-badge" style="border-color:#fca5a5;background:#fef2f2;color:#991b1b;">${escapeHtml(item.sku || 'SKU')}</span></td>
         <td><b class="inv-product-name-link" onclick="closeInventoryDrilldown(); openInventoryModal(${item.id});">${escapeHtml(item.name)}</b></td>
-        <td>🏢 ${escapeHtml(item.supplier || 'Direct')}</td>
+        <td>${escapeHtml(item.supplier || 'Direct')}</td>
         <td style="font-weight:800;font-size:14px;text-align:center;color:#dc2626;">${qty}</td>
         <td style="text-align:center;color:#64748b;font-weight:700;">${minS}</td>
         <td style="text-align:center;"><span style="background:#fee2e2;color:#dc2626;font-weight:800;padding:2px 8px;border-radius:10px;font-size:11px;">-${deficit} Units</span></td>
         <td style="font-size:12px;color:#64748b;">${escapeHtml(item.supplierPhone || '—')}</td>
         <td style="text-align:center;white-space:nowrap;">
-          <button type="button" class="btn" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'IN');" style="background:#ea580c;color:white;font-weight:800;padding:4px 10px;font-size:11px;border-radius:6px;border:none;cursor:pointer;box-shadow:0 1px 3px rgba(234,88,12,0.3);">📦 Reorder / Restock</button>
+          <button type="button" class="btn" onclick="closeInventoryDrilldown(); openStockAdjustModal(${item.id}, 'IN');" style="background:#ea580c;color:white;font-weight:800;padding:4px 12px;font-size:11px;border-radius:6px;border:none;cursor:pointer;box-shadow:0 1px 3px rgba(234,88,12,0.3);display:inline-flex;align-items:center;gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>Reorder / Restock</span>
+          </button>
         </td>
       </tr>`;
     }
@@ -4849,15 +5850,15 @@ function updateDashboardInventoryOverview() {
 
     let statusHtml = '';
     if (qty === 0) {
-      statusHtml = '<span class="stock-pill stock-pill-out" style="font-size:11px;">🚫 Out of Stock</span>';
+      statusHtml = '<span class="stock-pill stock-pill-out" style="font-size:11px;">Out of Stock</span>';
     } else if (qty <= minS) {
-      statusHtml = `<span class="stock-pill stock-pill-low" style="font-size:11px;">⚠️ Low (${qty})</span>`;
+      statusHtml = `<span class="stock-pill stock-pill-low" style="font-size:11px;">Low (${qty})</span>`;
     } else {
-      statusHtml = `<span class="stock-pill stock-pill-in" style="font-size:11px;">✓ In Stock</span>`;
+      statusHtml = `<span class="stock-pill stock-pill-in" style="font-size:11px;">In Stock</span>`;
     }
 
     const supplierBadge = item.supplier
-      ? `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;border:1px solid #bfdbfe;">🏢 ${escapeHtml(item.supplier)}</span>`
+      ? `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(37,99,235,0.08);color:var(--accent-blue,#2563eb);font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid rgba(37,99,235,0.2);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></svg>${escapeHtml(item.supplier)}</span>`
       : '<span style="color:#94a3b8;">—</span>';
 
     return `<tr>
@@ -5147,9 +6148,9 @@ function setStockOpType(op) {
   // Reset button styles
   [btnSale, btnLoss, btnIn].forEach(b => {
     if (b) {
-      b.style.borderColor = '#e2e8f0';
-      b.style.background = '#f8fafc';
-      b.style.color = '#64748b';
+      b.style.borderColor = 'var(--border)';
+      b.style.background = 'var(--input-bg)';
+      b.style.color = 'var(--text-2)';
     }
   });
 
@@ -5228,7 +6229,7 @@ function recalcStockFinancialImpact() {
       impactBox.style.background = 'linear-gradient(135deg, #f0fdf4, #dcfce7)';
       impactBox.style.borderColor = '#86efac';
     }
-    if (impactTitle) impactTitle.innerHTML = '&#128176; Financial Money Inflow (Income)';
+    if (impactTitle) impactTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle;margin-right:4px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Financial Money Inflow (Income)';
     if (impactAmount) {
       impactAmount.style.color = '#059669';
       impactAmount.textContent = `+ ${formatCurrency(total)}`;
@@ -5239,7 +6240,7 @@ function recalcStockFinancialImpact() {
       impactBox.style.background = 'linear-gradient(135deg, #fef2f2, #fee2e2)';
       impactBox.style.borderColor = '#fca5a5';
     }
-    if (impactTitle) impactTitle.innerHTML = '&#9888;&#65039; Financial Loss to Record (Expense)';
+    if (impactTitle) impactTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle;margin-right:4px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Financial Loss to Record (Expense)';
     if (impactAmount) {
       impactAmount.style.color = '#dc2626';
       impactAmount.innerHTML = `&minus; ${formatCurrency(total)}`;
@@ -5251,7 +6252,7 @@ function recalcStockFinancialImpact() {
       impactBox.style.background = 'linear-gradient(135deg, #eff6ff, #dbeafe)';
       impactBox.style.borderColor = '#93c5fd';
     }
-    if (impactTitle) impactTitle.innerHTML = '&#128230; Inventory Stock Valuation Inflow';
+    if (impactTitle) impactTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle;margin-right:4px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> Inventory Stock Valuation Inflow';
     if (impactAmount) {
       impactAmount.style.color = '#2563eb';
       impactAmount.textContent = `+ ${formatCurrency(total)}`;
@@ -5536,7 +6537,7 @@ function deleteInventoryProduct(id) {
   if (!item) return;
 
   openConfirmModal({
-    title: `🗑️ Delete Product "${item.name}"?`,
+    title: `Delete Product "${item.name}"?`,
     message: `Are you sure you want to delete <b>${escapeHtml(item.name)} (${item.sku})</b> from your inventory?`,
     actionText: 'Yes, Delete Product',
     actionClass: 'btn-danger',
@@ -5576,7 +6577,13 @@ function exportInventoryCSV() {
 //  AMAZON SELLER CENTRAL — 5 ACCOUNTS MANAGEMENT
 // ══════════════════════════════════════════════════
 const AMAZON_ACCOUNT_NAMES = ['Livvora', 'Heer Art', 'Heer Feshion', 'MKD Enterprise', 'Anand IT Sales'];
-const AMAZON_ACCOUNT_ICONS = ['🏪', '🎨', '👗', '🏢', '💻'];
+const AMAZON_ACCOUNT_ICONS = [
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>',
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>',
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="2"></line><line x1="8" y1="6" x2="10" y2="6"></line><line x1="14" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="10" y2="10"></line><line x1="14" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="10" y2="14"></line><line x1="14" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="10" y2="18"></line><line x1="14" y1="18" x2="16" y2="18"></line></svg>',
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'
+];
 const AMAZON_ACCOUNT_COLORS = ['#ea580c', '#2563eb', '#7c3aed', '#059669', '#0891b2'];
 
 let amazonAccounts = [];
@@ -5668,10 +6675,10 @@ function renderAmazonDashboard() {
     const accIdx = order.accountIndex || 0;
     const accName = AMAZON_ACCOUNT_NAMES[accIdx] || 'Unknown';
     const accColor = AMAZON_ACCOUNT_COLORS[accIdx] || '#64748b';
-    const accIcon = AMAZON_ACCOUNT_ICONS[accIdx] || '📦';
+    const accIcon = AMAZON_ACCOUNT_ICONS[accIdx] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>';
     const statusBadge = order.status === 'Shipped' ? '<span style="background:#dcfce7;color:#059669;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✓ Shipped</span>'
-      : order.status === 'Cancelled' ? '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✗ Cancelled</span>'
-      : order.status === 'Pending' ? '<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">⏳ Pending</span>'
+      : order.status === 'Cancelled' ? '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">✕ Cancelled</span>'
+      : order.status === 'Pending' ? '<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">Pending</span>'
       : `<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${escapeHtml(order.status || 'N/A')}</span>`;
 
     return `<tr>
@@ -5715,8 +6722,14 @@ function renderAmazonSettings() {
         <div class="form-group"><label style="font-size:12px;">LWA Client Secret</label><input type="password" class="form-input" id="amzClientSecret_${i}" placeholder="amzn1.oa2-cs.v1..." value="${escapeHtml(acc.clientSecret || '')}"></div>
         <div class="form-group"><label style="font-size:12px;">LWA Refresh Token</label><input type="password" class="form-input" id="amzRefreshToken_${i}" placeholder="Atzr|..." value="${escapeHtml(acc.refreshToken || '')}"></div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost" onclick="saveAmazonAccount(${i})" style="flex:1;justify-content:center;font-weight:700;">💾 Save Account ${i + 1}</button>
-          <button class="btn" onclick="testAmazonConnection(${i})" style="flex:1;justify-content:center;font-weight:700;background:${color};color:white;border:none;border-radius:8px;">🔗 Test Connection</button>
+          <button class="btn btn-ghost" onclick="saveAmazonAccount(${i})" style="flex:1;justify-content:center;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span>Save Account ${i + 1}</span>
+          </button>
+          <button class="btn" onclick="testAmazonConnection(${i})" style="flex:1;justify-content:center;font-weight:700;background:${color};color:white;border:none;border-radius:8px;display:inline-flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span>Test Connection</span>
+          </button>
         </div>
         ${acc.lastSync ? `<div style="font-size:11px;color:#94a3b8;margin-top:6px;text-align:center;">Last synced: ${acc.lastSync}</div>` : ''}
       </div>
@@ -5767,7 +6780,7 @@ function testAmazonConnection(i) {
     showToast(`Please fill Seller ID, Client ID, and Refresh Token for ${acc.name}.`, 'error');
     return;
   }
-  showToast(`🔗 Testing ${acc.name} connection... (SP-API requires a backend proxy on your Hostinger server)`, 'info');
+  showToast(`Testing ${acc.name} connection... (SP-API requires a backend proxy on your Hostinger server)`, 'info');
   // Mark as connected for UI preview purposes
   amazonAccounts[i].connected = true;
   amazonAccounts[i].lastSync = new Date().toLocaleString('en-IN');
@@ -5787,7 +6800,7 @@ function syncAllAmazonOrders() {
     showToast('Backend Proxy URL not set. Go to Settings → Amazon → Auto-Sync Engine and enter your server URL.', 'error');
     return;
   }
-  showToast(`🔄 Syncing orders from ${connected.length} Amazon account(s)...`, 'info');
+  showToast(`Syncing orders from ${connected.length} Amazon account(s)...`, 'info');
   amzSyncLog(`Sync started for ${connected.length} account(s)...`);
 
   let completed = 0;
@@ -5869,9 +6882,9 @@ function syncAllAmazonOrders() {
         updateAmzSyncUI();
 
         if (totalImported > 0) {
-          showToast(`✅ Auto-Sync complete! ${totalImported} new orders imported from ${completed} account(s).`, 'success');
+          showToast(`Auto-Sync complete! ${totalImported} new orders imported from ${completed} account(s).`, 'success');
         } else {
-          showToast(`🔄 Sync complete. No new orders found across ${completed} account(s).`, 'info');
+          showToast(`Sync complete. No new orders found across ${completed} account(s).`, 'info');
         }
         amzSyncLog(`Sync complete. Total new orders: ${totalImported}`);
       }
@@ -6252,19 +7265,19 @@ function setAmzCalcMode(mode) {
     // Mode B: Manual Selling Price active
     if (btnA) {
       btnA.style.background = 'transparent';
-      btnA.style.color = '#64748b';
+      btnA.style.color = 'var(--text-2)';
       btnA.style.boxShadow = 'none';
       btnA.classList.remove('active');
     }
     if (btnB) {
-      btnB.style.background = '#ffffff';
-      btnB.style.color = '#0f172a';
-      btnB.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+      btnB.style.background = 'var(--card-solid)';
+      btnB.style.color = 'var(--text-1)';
+      btnB.style.boxShadow = 'var(--shadow-sm)';
       btnB.classList.add('active');
     }
     if (manualCard) {
       manualCard.style.border = '2px solid #3b82f6';
-      manualCard.style.background = 'linear-gradient(135deg, #eff6ff, #dbeafe)';
+      manualCard.style.background = 'rgba(59, 130, 246, 0.12)';
     }
     if (manualStatus) manualStatus.textContent = 'Active: Direct Listing Price';
     if (modeBadge) {
@@ -6273,8 +7286,8 @@ function setAmzCalcMode(mode) {
     }
     if (profitTitle) profitTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;display:inline-block;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Resulting Profit Margin (% of SP)';
     if (profitContainer) {
-      profitContainer.style.background = '#f8fafc';
-      profitContainer.style.borderColor = '#cbd5e1';
+      profitContainer.style.background = 'var(--input-bg)';
+      profitContainer.style.borderColor = 'var(--border)';
     }
     if (bdLabel) bdLabel.textContent = 'Direct / Manual Selling Price (SP)';
     if (bdBadge) {
@@ -6286,19 +7299,19 @@ function setAmzCalcMode(mode) {
     // Mode A: Target Margin % active
     if (btnB) {
       btnB.style.background = 'transparent';
-      btnB.style.color = '#64748b';
+      btnB.style.color = 'var(--text-2)';
       btnB.style.boxShadow = 'none';
       btnB.classList.remove('active');
     }
     if (btnA) {
-      btnA.style.background = '#ffffff';
-      btnA.style.color = '#0f172a';
-      btnA.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+      btnA.style.background = 'var(--card-solid)';
+      btnA.style.color = 'var(--text-1)';
+      btnA.style.boxShadow = 'var(--shadow-sm)';
       btnA.classList.add('active');
     }
     if (manualCard) {
-      manualCard.style.border = '1.5px solid #e2e8f0';
-      manualCard.style.background = '#f8fafc';
+      manualCard.style.border = '1.5px solid var(--border)';
+      manualCard.style.background = 'var(--input-bg)';
     }
     if (manualStatus) manualStatus.textContent = 'Calculated from Target Margin %';
     if (modeBadge) {
@@ -6365,13 +7378,38 @@ function onCustomClosingFeeChange(val) {
   calculateReversePrice();
 }
 
+let amzAdsUnit = 'flat'; // 'flat' (₹ / unit) or 'pct' (% of SP)
+
+function setAmzAdsUnit(unit) {
+  amzAdsUnit = unit === 'pct' ? 'pct' : 'flat';
+  const btnFlat = document.getElementById('btnAmzAdsFlat');
+  const btnPct = document.getElementById('btnAmzAdsPct');
+  const prefix = document.getElementById('amzAdsUnitPrefix');
+  if (btnFlat && btnPct) {
+    if (amzAdsUnit === 'pct') {
+      btnFlat.style.background = 'transparent';
+      btnFlat.style.color = '#64748b';
+      btnPct.style.background = '#2563eb';
+      btnPct.style.color = '#fff';
+      if (prefix) prefix.textContent = '%';
+    } else {
+      btnFlat.style.background = '#2563eb';
+      btnFlat.style.color = '#fff';
+      btnPct.style.background = 'transparent';
+      btnPct.style.color = '#64748b';
+      if (prefix) prefix.textContent = '₹';
+    }
+  }
+  calculateReversePrice();
+}
+
 // ── DYNAMIC AMAZON PRICE CALCULATION FORMULA (DUAL-MODE) ──
 function calculateReversePrice() {
   const cost          = parseFloat(document.getElementById('priceCalcCost')?.value)           || 0;
   const prodGstPct    = (parseFloat(document.getElementById('priceCalcProductGst')?.value)    || 0) / 100;
   const refPct        = (parseFloat(document.getElementById('priceCalcReferralPct')?.value)   || 0) / 100;
   const shippingFee   = parseFloat(document.getElementById('priceCalcShippingFee')?.value)    || 0;
-  const adsCost       = parseFloat(document.getElementById('priceCalcAdsCost')?.value)        || 0;
+  const adsInputVal   = parseFloat(document.getElementById('priceCalcAdsCost')?.value)        || 0;
   const reviewCost    = parseFloat(document.getElementById('priceCalcReviewCost')?.value)     || 0;
   const returnRate    = (parseFloat(document.getElementById('priceCalcReturnRate')?.value)    || 0) / 100;
   const returnPenalty = parseFloat(document.getElementById('priceCalcReturnPenalty')?.value)  || 0;
@@ -6379,6 +7417,11 @@ function calculateReversePrice() {
 
   const amzGstMult = 1.18; // 18% GST on Amazon service fees
   const returnCostImpact = (shippingFee + returnPenalty) * returnRate;
+
+  // Indian GST inclusive base ratio: k_gst = g / (1 + g)
+  const gstFactor = prodGstPct > 0 ? (prodGstPct / (1 + prodGstPct)) : 0;
+  const adPctRate = (amzAdsUnit === 'pct') ? (adsInputVal / 100) : 0;
+  const adFlatAmount = (amzAdsUnit === 'pct') ? 0 : adsInputVal;
 
   let sp = 0;
   let closingFee = parseFloat(document.getElementById('priceCalcClosingFee')?.value) || 0;
@@ -6395,37 +7438,68 @@ function calculateReversePrice() {
       if (closeInput) closeInput.value = closingFee;
     }
   } else {
-    // ──────── MODE A: TARGET MARGIN % → SOLVE SELLING PRICE ────────
-    const denominator = 1 - targetProfitPct - (amzGstMult * refPct) - prodGstPct;
-    if (denominator > 0.005) {
-      if (amzAutoClosingFee) {
-        // Iterative contraction mapping to settle on the correct closing fee slab
-        closingFee = 30; // initial seed
-        for (let iter = 0; iter < 6; iter++) {
-          const fixedFees = closingFee + shippingFee;
-          const numerator = (cost * (1 - prodGstPct))
-                          + (amzGstMult * fixedFees)
-                          + adsCost
-                          + reviewCost
-                          + returnCostImpact;
-          sp = numerator / denominator;
-          const slabFee = getAmazonClosingFee(sp);
-          if (slabFee === closingFee) break;
-          closingFee = slabFee;
-        }
-        const closeInput = document.getElementById('priceCalcClosingFee');
-        if (closeInput) closeInput.value = closingFee;
-      } else {
-        const fixedFees = closingFee + shippingFee;
-        const numerator = (cost * (1 - prodGstPct))
-                        + (amzGstMult * fixedFees)
-                        + adsCost
+    // ──────── MODE A: TARGET MARGIN % → EXACT 4-SLAB PIECEWISE SOLVER ────────
+    const baseFixedCost = (cost * (1 - gstFactor))
+                        + (amzGstMult * shippingFee)
+                        + adFlatAmount
                         + reviewCost
                         + returnCostImpact;
-        sp = numerator / denominator;
+
+    if (amzAutoClosingFee) {
+      // Evaluate 4 slabs:
+      // Slab 1: SP <= 250, close = 4, ref = 0 (since SP <= 1000)
+      // Slab 2: 250 < SP <= 500, close = 9, ref = 0
+      // Slab 3: 500 < SP <= 1000, close = 30, ref = 0
+      // Slab 4: SP > 1000, close = 61, ref = refPct (since SP > 1000)
+      const slabs = [
+        { min: 0,        max: 250,      close: 4,  hasRef: false },
+        { min: 250.0001, max: 500,      close: 9,  hasRef: false },
+        { min: 500.0001, max: 1000,     close: 30, hasRef: false },
+        { min: 1000.0001, max: Infinity, close: 61, hasRef: true }
+      ];
+
+      let solvedSp = 0;
+      let solvedClose = 30;
+
+      for (const slab of slabs) {
+        const slabRefRate = slab.hasRef ? (amzGstMult * refPct) : 0;
+        const denom = 1 - targetProfitPct - slabRefRate - gstFactor - adPctRate;
+        if (denom > 0.001) {
+          const candSp = (baseFixedCost + (amzGstMult * slab.close)) / denom;
+          if (candSp >= slab.min && candSp <= slab.max) {
+            solvedSp = candSp;
+            solvedClose = slab.close;
+            break;
+          }
+        }
       }
+
+      // If boundary discontinuity jump occurred across slabs
+      if (solvedSp === 0) {
+        const denomHigh = 1 - targetProfitPct - (amzGstMult * refPct) - gstFactor - adPctRate;
+        if (denomHigh > 0.001) {
+          solvedSp = (baseFixedCost + (amzGstMult * 61)) / denomHigh;
+          solvedClose = 61;
+        } else {
+          solvedSp = 0;
+          solvedClose = 30;
+        }
+      }
+
+      sp = solvedSp;
+      closingFee = solvedClose;
+      const closeInput = document.getElementById('priceCalcClosingFee');
+      if (closeInput) closeInput.value = closingFee;
     } else {
-      sp = 0;
+      // User specified a custom closing fee
+      const denomNoRef = 1 - targetProfitPct - gstFactor - adPctRate;
+      const candNoRef = denomNoRef > 0.001 ? ((baseFixedCost + (amzGstMult * closingFee)) / denomNoRef) : 0;
+      if (candNoRef > 0 && candNoRef <= 1000) {
+        sp = candNoRef;
+      } else {
+        const denomWithRef = 1 - targetProfitPct - (amzGstMult * refPct) - gstFactor - adPctRate;
+        sp = denomWithRef > 0.001 ? ((baseFixedCost + (amzGstMult * closingFee)) / denomWithRef) : 0;
+      }
     }
 
     // Sync calculated SP into the manual input without losing focus
@@ -6449,20 +7523,31 @@ function calculateReversePrice() {
     }
   }
 
-  // Compute itemized deductions
-  const fixedFees          = closingFee + shippingFee;
-  const referralFee        = sp * refPct;
-  const totalAmzFee        = referralFee + fixedFees;
-  const gstOnAmzFee        = totalAmzFee * 0.18;
-  const totalAmzDeduction  = totalAmzFee + gstOnAmzFee;
+  // ──────── AMAZON FEES LOGIC ────────
+  // Strict rule: Referral fee applied ONLY IF Selling Price > ₹1000. If SP <= ₹1000, Referral Fee = ₹0!
+  const isReferralApplicable = sp > 1000;
+  const referralFee = isReferralApplicable ? (sp * refPct) : 0;
+  const fixedFees = closingFee + shippingFee;
+  const totalAmzFee = referralFee + fixedFees;
+  const gstOnAmzFee = totalAmzFee * 0.18;
+  const totalAmzDeduction = totalAmzFee + gstOnAmzFee;
 
-  // Net GST to Govt = Output GST on SP - ITC on COGS
-  const netGstGovt = Math.max(0, (sp * prodGstPct) - (cost * prodGstPct));
+  // Gross Payout from Amazon = SP - (Amazon Fees + GST on Amazon Fees)
+  const grossPayout = sp - totalAmzDeduction;
 
-  // Total deductions = all platform, tax, marketing and return costs
+  // ──────── GST CALCULATIONS ────────
+  // Output GST on Selling Price & Input Tax Credit (ITC) on Product Cost
+  const outputGst = sp * gstFactor;
+  const itcGst = cost * gstFactor;
+  const netGstGovt = Math.max(0, outputGst - itcGst);
+
+  // ──────── ADDITIONAL COSTS ────────
+  const adsCost = (amzAdsUnit === 'pct') ? (sp * adsInputVal / 100) : adsInputVal;
+
+  // Total Deductions = Amazon Fees + Amazon GST + Govt GST Liability + Ads + Review Cost + Return Impact
   const totalDeductions = totalAmzDeduction + netGstGovt + adsCost + reviewCost + returnCostImpact;
 
-  // Net in-hand profit & margin
+  // Net Profit = SP - Cost - Total Deductions (or Gross Payout - Cost - Govt GST - Ads - Review - Return Impact)
   const netProfit = sp > 0 ? (sp - cost - totalDeductions) : 0;
   const actualMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
 
@@ -6482,19 +7567,36 @@ function calculateReversePrice() {
     setText('targetProfitPctDisplay', (targetProfitPct * 100).toFixed(1) + '%');
   }
 
+  // Update Referral Fee Badge on input
+  const refStatusBadge = document.getElementById('amzReferralStatusBadge');
+  if (refStatusBadge) {
+    if (isReferralApplicable) {
+      refStatusBadge.textContent = `Active: SP > ₹1000 (${(refPct * 100).toFixed(1)}%)`;
+      refStatusBadge.style.background = '#ffedd5';
+      refStatusBadge.style.color = '#c2410c';
+    } else {
+      refStatusBadge.textContent = 'Exempt: SP ≤ ₹1000 (₹0 fee)';
+      refStatusBadge.style.background = '#dcfce7';
+      refStatusBadge.style.color = '#15803d';
+    }
+  }
+
   // — Update UI Breakdown Elements —
   setText('breakdownSellingPrice',    formatCurrency(sp));
   setText('breakdownNetProfit',       formatCurrency(netProfit));
   setText('breakdownMarginPct',       actualMargin.toFixed(1) + '%');
   setText('breakdownCost',            formatCurrency(cost));
-  setText('breakdownReferral',        formatCurrency(referralFee) + ` (${(refPct*100).toFixed(1)}%)`);
+  setText('breakdownReferral',        isReferralApplicable 
+    ? (formatCurrency(referralFee) + ` (${(refPct * 100).toFixed(1)}% on SP > ₹1000)`) 
+    : '₹0.00 (Exempt: SP ≤ ₹1000)');
   setText('breakdownFixedFees',       formatCurrency(fixedFees) + ` (Close: ${formatCurrency(closingFee)} + Ship: ${formatCurrency(shippingFee)})`);
   setText('breakdownGstOnFees',       formatCurrency(gstOnAmzFee));
-  setText('breakdownNetGstGovt',      formatCurrency(netGstGovt) + ` (${(prodGstPct*100).toFixed(0)}% GST)`);
-  setText('breakdownAdsCost',         formatCurrency(adsCost));
+  setText('breakdownGrossPayout',     formatCurrency(grossPayout));
+  setText('breakdownNetGstGovt',      formatCurrency(netGstGovt) + ` (Output: ${formatCurrency(outputGst)} − ITC: ${formatCurrency(itcGst)})`);
+  setText('breakdownAdsCost',         formatCurrency(adsCost) + (amzAdsUnit === 'pct' ? ` (${adsInputVal}% of SP)` : ''));
   setText('breakdownReviewCost',      formatCurrency(reviewCost));
   setText('breakdownReturnCost',      formatCurrency(returnCostImpact));
-  setText('breakdownReturnRatePct',   `(${(returnRate*100).toFixed(1)}% return rate)`);
+  setText('breakdownReturnRatePct',   `(${(returnRate * 100).toFixed(1)}% return rate)`);
   setText('breakdownTotalDeductions', formatCurrency(totalDeductions));
   setText('breakdownNetProfitBottom', formatCurrency(netProfit) + ` (${actualMargin.toFixed(1)}% of SP)`);
 
@@ -6507,9 +7609,9 @@ function calculateReversePrice() {
   return {
     calcMode: amzCalcMode,
     sp, cost, prodGstPct, refPct, closingFee, shippingFee, targetProfitPct,
-    adsCost, reviewCost, returnRate, returnPenalty,
-    referralFee, totalAmzFee, gstOnAmzFee, totalAmzDeduction,
-    netGstGovt, netProfit, actualMargin, returnCostImpact, totalDeductions
+    adsCost, adsInputVal, amzAdsUnit, reviewCost, returnRate, returnPenalty,
+    referralFee, totalAmzFee, gstOnAmzFee, totalAmzDeduction, grossPayout,
+    outputGst, itcGst, netGstGovt, netProfit, actualMargin, returnCostImpact, totalDeductions
   };
 }
 
@@ -6546,6 +7648,7 @@ function resetPricingCalculator() {
   document.getElementById('priceCalcReturnRate').value = '5';
   document.getElementById('priceCalcReturnPenalty').value = '50';
   document.getElementById('priceCalcTargetProfitPct').value = '15';
+  setAmzAdsUnit('flat');
   const autoCheck = document.getElementById('amzAutoClosingFeeCheck');
   if (autoCheck) autoCheck.checked = true;
   amzAutoClosingFee = true;
@@ -6652,7 +7755,7 @@ function renderPricingTrackerTable() {
   if (!tbody) return;
 
   if (trackedPricingList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 48px 24px; color: #64748b;"><div style="font-size: 36px; margin-bottom: 8px;">&#128203;</div><div style="font-weight: 800; font-size: 16px; color: #0f172a; margin-bottom: 4px;">No Tracked Amazon Listings Yet</div><div style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Configure your cost, fees, and profit targets in the calculator to track your listings here.</div><button type="button" class="btn btn-primary" onclick="switchAmzSubtab(\'calculator\')" style="padding: 10px 20px; font-weight: 800; font-size: 13px;"><span>&#129518; Open Amazon Price Calculator</span></button></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 48px 24px; color: var(--text-muted);"><div style="display:flex;justify-content:center;margin-bottom:12px;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div style="font-weight: 800; font-size: 16px; color: var(--text-1); margin-bottom: 4px;">No Tracked Amazon Listings Yet</div><div style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">Configure your cost, fees, and profit targets in the calculator to track your listings here.</div><button type="button" class="btn btn-primary" onclick="switchAmzSubtab(\'calculator\')" style="padding: 10px 20px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg><span>Open Amazon Price Calculator</span></button></td></tr>';
     return;
   }
 
@@ -6666,34 +7769,34 @@ function renderPricingTrackerTable() {
   }
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:28px;color:#64748b;">
-      <div style="font-size:24px;margin-bottom:6px;">🔍</div>
-      <div style="font-weight:700;font-size:14px;color:#0f172a;">No listings matching "${escapeHtml(pricingTrackerSearchQuery)}"</div>
-      <div style="font-size:12px;margin-top:4px;color:#94a3b8;">Try checking the SKU ID or <a href="javascript:void(0)" onclick="clearPricingTrackerSearch()" style="color:#2563eb;font-weight:600;">clear search</a></div>
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:28px;color:var(--text-muted);">
+      <div style="display:flex;justify-content:center;margin-bottom:6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+      <div style="font-weight:700;font-size:14px;color:var(--text-1);">No listings matching "${escapeHtml(pricingTrackerSearchQuery)}"</div>
+      <div style="font-size:12px;margin-top:4px;color:var(--text-muted);">Try checking the SKU ID or <a href="javascript:void(0)" onclick="clearPricingTrackerSearch()" style="color:#38bdf8;font-weight:600;">clear search</a></div>
     </td></tr>`;
     return;
   }
 
   tbody.innerHTML = list.map(item => `
     <tr>
-      <td style="font-size:12px;color:#64748b;">${escapeHtml(item.date || '')}</td>
-      <td style="font-family:monospace;font-size:12px;font-weight:700;color:#0f172a;">${escapeHtml(item.sku)}</td>
-      <td style="font-weight:600;">${escapeHtml(item.name)}</td>
-      <td style="font-weight:700;">${formatCurrency(item.cost)}</td>
-      <td style="color:#0284c7;font-weight:700;">${item.targetMargin}%</td>
-      <td style="color:#ea580c;font-weight:700;">${formatCurrency(item.amzDeduction)}</td>
-      <td style="color:#64748b;font-weight:600;">${formatCurrency(item.netGstGovt)}</td>
-      <td style="font-weight:900;color:#180a2a;font-size:15px;background:#f8fafc;">
+      <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(item.date || '')}</td>
+      <td><span style="background:rgba(59,130,246,0.12);color:#38bdf8;padding:2px 8px;border-radius:6px;font-family:monospace;font-size:11.5px;font-weight:700;border:1px solid rgba(56,189,248,0.25);">${escapeHtml(item.sku)}</span></td>
+      <td style="font-weight:600;color:var(--text-1);">${escapeHtml(item.name)}</td>
+      <td style="font-weight:700;color:var(--text-1);">${formatCurrency(item.cost)}</td>
+      <td style="color:#38bdf8;font-weight:700;">${item.targetMargin}%</td>
+      <td style="color:#f97316;font-weight:700;">${formatCurrency(item.amzDeduction)}</td>
+      <td style="color:var(--text-2);font-weight:600;">${formatCurrency(item.netGstGovt)}</td>
+      <td style="font-weight:900;font-size:15px;color:var(--lynxora-coral);white-space:nowrap;">
         ${formatCurrency(item.sp)}
-        ${item.calcMode === 'B' ? '<span class="badge" style="background:#dbeafe;color:#1e40af;font-size:9.5px;padding:1px 5px;margin-left:4px;border-radius:4px;">Manual</span>' : ''}
+        ${item.calcMode === 'B' ? '<span class="badge" style="background:rgba(59,130,246,0.18);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);font-size:9.5px;padding:1px 5px;margin-left:4px;border-radius:4px;">Manual</span>' : ''}
       </td>
-      <td style="font-weight:800;color:#059669;">${formatCurrency(item.netProfit)}</td>
-      <td><span class="badge" style="background:#dcfce7;color:#15803d;font-weight:800;">${item.actualMargin}%</span></td>
+      <td style="font-weight:800;color:#10b981;">${formatCurrency(item.netProfit)}</td>
+      <td><span class="badge" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-weight:800;padding:3px 8px;border-radius:6px;">${item.actualMargin}%</span></td>
       <td style="white-space:nowrap;">
-        <button class="action-btn" onclick="openEditPricingModal(${item.id})" title="Edit Price / Calculation" style="width:28px;height:28px;margin-right:6px;background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
+        <button class="action-btn" onclick="openEditPricingModal(${item.id})" title="Edit Price / Calculation" style="width:28px;height:28px;margin-right:6px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
-        <button class="action-btn action-delete" onclick="deleteTrackedPrice(${item.id})" title="Delete" style="width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
+        <button class="action-btn action-delete" onclick="deleteTrackedPrice(${item.id})" title="Delete" style="width:28px;height:28px;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
       </td>
@@ -6751,10 +7854,11 @@ function recalcEditPricingFromSp() {
   const closing = parseFloat(document.getElementById('editPricingClosingFee')?.value) || 0;
   const shipping = parseFloat(document.getElementById('editPricingShippingFee')?.value) || 0;
 
-  const refFee = sp * refPct;
+  const refFee = sp > 1000 ? (sp * refPct) : 0;
   const totalAmzFee = refFee + closing + shipping;
   const totalAmzDeduction = totalAmzFee * 1.18;
-  const netGstGovt = (sp * prodGst) - (cost * prodGst);
+  const gstFactor = prodGst > 0 ? (prodGst / (1 + prodGst)) : 0;
+  const netGstGovt = Math.max(0, (sp * gstFactor) - (cost * gstFactor));
   const netProfit = sp - cost - totalAmzDeduction - netGstGovt;
   const actualMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
 
@@ -6773,12 +7877,20 @@ function recalcEditPricingFromVariables() {
   const shipping = parseFloat(document.getElementById('editPricingShippingFee')?.value) || 0;
 
   const fixedFees = closing + shipping;
-  const denominator = 1 - targetProfitPct - (1.18 * refPct) - prodGst;
+  const gstFactor = prodGst > 0 ? (prodGst / (1 + prodGst)) : 0;
+  const baseNumerator = (cost * (1 - gstFactor)) + (1.18 * fixedFees);
 
+  // First try without referral fee (if SP <= 1000)
+  const denomNoRef = 1 - targetProfitPct - gstFactor;
   let sp = 0;
-  if (denominator > 0.01) {
-    const numerator = (cost * (1 - prodGst)) + (1.18 * fixedFees);
-    sp = numerator / denominator;
+  if (denomNoRef > 0.01) {
+    const candSp = baseNumerator / denomNoRef;
+    if (candSp <= 1000) {
+      sp = candSp;
+    } else {
+      const denomWithRef = 1 - targetProfitPct - (1.18 * refPct) - gstFactor;
+      sp = denomWithRef > 0.01 ? (baseNumerator / denomWithRef) : 0;
+    }
   }
 
   const spInput = document.getElementById('editPricingSp');
@@ -6803,10 +7915,11 @@ function handleEditPricingSubmit(event) {
   const closing = parseFloat(document.getElementById('editPricingClosingFee')?.value) || 0;
   const shipping = parseFloat(document.getElementById('editPricingShippingFee')?.value) || 0;
 
-  const refFee = sp * refPct;
+  const refFee = sp > 1000 ? (sp * refPct) : 0;
   const totalAmzFee = refFee + closing + shipping;
   const totalAmzDeduction = totalAmzFee * 1.18;
-  const netGstGovt = (sp * prodGst) - (cost * prodGst);
+  const gstFactor = prodGst > 0 ? (prodGst / (1 + prodGst)) : 0;
+  const netGstGovt = Math.max(0, (sp * gstFactor) - (cost * gstFactor));
   const netProfit = sp - cost - totalAmzDeduction - netGstGovt;
   const actualMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
 
@@ -6917,19 +8030,19 @@ function deleteTrackedPrice(id) {
 
   const detailsHtml = `
     <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;display:flex;flex-direction:column;gap:6px;">
-      <div class="confirm-preview-row"><span class="confirm-preview-label">SKU:</span><span class="confirm-preview-val">🏷️ <b>${escapeHtml(item.sku || 'N/A')}</b></span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">SKU:</span><span class="confirm-preview-val"><b>${escapeHtml(item.sku || 'N/A')}</b></span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Product:</span><span class="confirm-preview-val">${escapeHtml(item.name || item.sku || 'Listing')}</span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Selling Price:</span><span class="confirm-preview-val" style="color:#059669;font-weight:800;">${formatCurrency(item.sp || 0)}</span></div>
     </div>
   `;
 
   openConfirmModal({
-    title: '⚠️ Remove Tracked Price?',
+    title: 'Remove Tracked Price?',
     message: 'Are you sure you want to remove this tracked listing from your Amazon Price Calculator?',
     detailsHtml: detailsHtml,
-    actionText: '🗑️ Yes, Remove Listing',
+    actionText: 'Yes, Remove Listing',
     actionClass: 'btn-danger',
-    cancelText: '✕ Cancel / Keep',
+    cancelText: 'Cancel / Keep',
     onConfirm: () => {
       trackedPricingList = trackedPricingList.filter(i => i.id !== id);
       saveTrackedPricing('Removed Amazon price for ' + (item.sku || ''));
@@ -6943,11 +8056,11 @@ function deleteTrackedPrice(id) {
 function clearAllTrackedPrices() {
   if (trackedPricingList.length === 0) return;
   openConfirmModal({
-    title: '⚠️ Clear Amazon Tracked Prices?',
+    title: 'Clear Amazon Tracked Prices?',
     message: `Are you sure you want to remove all <b>${trackedPricingList.length} tracked listings</b> from the price calculator? This cannot be undone.`,
-    actionText: '🗑️ Yes, Clear All',
+    actionText: 'Yes, Clear All',
     actionClass: 'btn-danger',
-    cancelText: '✕ Cancel / Keep',
+    cancelText: 'Cancel / Keep',
     onConfirm: () => {
       trackedPricingList = [];
       saveTrackedPricing('Cleared all Amazon tracked prices', true);
@@ -7086,7 +8199,7 @@ function importPricingTrackerCSV(input) {
         renderPricingTrackerTable();
         updateAmzTrackedBadge();
         switchAmzSubtab('tracker');
-        showToast(`Successfully imported ${importedCount} Amazon tracked listings! 🚀`, 'success');
+        showToast(`Successfully imported ${importedCount} Amazon tracked listings!`, 'success');
       } else {
         showToast('No valid Amazon listings found in CSV.', 'error');
       }
@@ -7333,9 +8446,9 @@ loadTrackedFlipkart();
 function setFkTier(tier) {
   document.getElementById('fkTier').value = tier;
   const styles = {
-    bronze: { border:'#cd7f32', bg:'#fef3c7', color:'#92400e' },
-    silver: { border:'#c0c0c0', bg:'#f1f5f9', color:'#475569' },
-    gold:   { border:'#ffd700', bg:'#fefce8', color:'#713f12' }
+    bronze: { border: '#cd7f32', bg: 'rgba(205, 127, 50, 0.15)', color: '#d97706' },
+    silver: { border: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', color: 'var(--text-1)' },
+    gold:   { border: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }
   };
   ['bronze','silver','gold'].forEach(t => {
     const btn = document.getElementById('fkTier' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -7347,9 +8460,9 @@ function setFkTier(tier) {
       btn.style.color = s.color;
       btn.style.fontWeight = '800';
     } else {
-      btn.style.border = '2px solid #e2e8f0';
-      btn.style.background = '#f8fafc';
-      btn.style.color = '#94a3b8';
+      btn.style.border = '2px solid var(--border)';
+      btn.style.background = 'var(--input-bg)';
+      btn.style.color = 'var(--text-muted)';
       btn.style.fontWeight = '600';
     }
   });
@@ -7361,11 +8474,11 @@ function setFkPayMode(mode) {
   const prepaidBtn = document.getElementById('fkPayPrepaid');
   const codBtn     = document.getElementById('fkPayCod');
   if (mode === 'prepaid') {
-    if (prepaidBtn) prepaidBtn.style.cssText = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid #3b82f6;background:#eff6ff;color:#1d4ed8;font-weight:800;font-size:11.5px;cursor:pointer;';
-    if (codBtn) codBtn.style.cssText         = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid #e2e8f0;background:#f8fafc;color:#94a3b8;font-weight:600;font-size:11.5px;cursor:pointer;';
+    if (prepaidBtn) prepaidBtn.style.cssText = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid #3b82f6;background:rgba(59,130,246,0.15);color:#60a5fa;font-weight:800;font-size:11.5px;cursor:pointer;';
+    if (codBtn) codBtn.style.cssText         = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid var(--border);background:var(--input-bg);color:var(--text-muted);font-weight:600;font-size:11.5px;cursor:pointer;';
   } else {
-    if (codBtn) codBtn.style.cssText         = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid #f59e0b;background:#fffbeb;color:#92400e;font-weight:800;font-size:11.5px;cursor:pointer;';
-    if (prepaidBtn) prepaidBtn.style.cssText = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid #e2e8f0;background:#f8fafc;color:#94a3b8;font-weight:600;font-size:11.5px;cursor:pointer;';
+    if (codBtn) codBtn.style.cssText         = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid #f59e0b;background:rgba(245,158,11,0.15);color:#fbbf24;font-weight:800;font-size:11.5px;cursor:pointer;';
+    if (prepaidBtn) prepaidBtn.style.cssText = 'flex:1;padding:8px 6px;border-radius:8px;border:2px solid var(--border);background:var(--input-bg);color:var(--text-muted);font-weight:600;font-size:11.5px;cursor:pointer;';
   }
   calculateFlipkartPrice();
 }
@@ -7376,12 +8489,12 @@ function setFkAdsMode(mode) {
   const pctBtn  = document.getElementById('fkAdsPctBtn');
   const suffix  = document.getElementById('fkAdsSuffix');
   if (mode === 'flat') {
-    if (flatBtn) { flatBtn.style.background = '#059669'; flatBtn.style.color = '#fff'; }
-    if (pctBtn)  { pctBtn.style.background  = '#f1f5f9'; pctBtn.style.color  = '#64748b'; }
+    if (flatBtn) { flatBtn.style.background = 'var(--lynxora-coral)'; flatBtn.style.color = 'var(--btn-accent-text, #070709)'; flatBtn.style.fontWeight = '800'; }
+    if (pctBtn)  { pctBtn.style.background  = 'var(--input-bg)'; pctBtn.style.color  = 'var(--text-muted)'; pctBtn.style.fontWeight = '600'; }
     if (suffix)  suffix.textContent = '₹';
   } else {
-    if (pctBtn)  { pctBtn.style.background  = '#059669'; pctBtn.style.color  = '#fff'; }
-    if (flatBtn) { flatBtn.style.background = '#f1f5f9'; flatBtn.style.color = '#64748b'; }
+    if (pctBtn)  { pctBtn.style.background  = 'var(--lynxora-coral)'; pctBtn.style.color  = 'var(--btn-accent-text, #070709)'; pctBtn.style.fontWeight = '800'; }
+    if (flatBtn) { flatBtn.style.background = 'var(--input-bg)'; flatBtn.style.color = 'var(--text-muted)'; flatBtn.style.fontWeight = '600'; }
     if (suffix)  suffix.textContent = '%';
   }
   calculateFlipkartPrice();
@@ -7418,19 +8531,19 @@ function setFkCalcMode(mode) {
     // Mode B: Manual Selling Price active
     if (btnA) {
       btnA.style.background = 'transparent';
-      btnA.style.color = '#64748b';
+      btnA.style.color = 'var(--text-2)';
       btnA.style.boxShadow = 'none';
       btnA.classList.remove('active');
     }
     if (btnB) {
-      btnB.style.background = '#ffffff';
-      btnB.style.color = '#0f172a';
-      btnB.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+      btnB.style.background = 'var(--card-solid)';
+      btnB.style.color = 'var(--text-1)';
+      btnB.style.boxShadow = 'var(--shadow-sm)';
       btnB.classList.add('active');
     }
     if (manualCard) {
       manualCard.style.borderColor = '#2563eb';
-      manualCard.style.background = '#eff6ff';
+      manualCard.style.background = 'rgba(37, 99, 235, 0.12)';
     }
     if (manualStatus) {
       manualStatus.textContent = 'Direct Entry (Active)';
@@ -7441,8 +8554,8 @@ function setFkCalcMode(mode) {
       modeBadge.style.background = '#059669';
     }
     if (profitContainer) {
-      profitContainer.style.background = '#f8fafc';
-      profitContainer.style.borderColor = '#cbd5e1';
+      profitContainer.style.background = 'var(--input-bg)';
+      profitContainer.style.borderColor = 'var(--border)';
     }
     if (profitTitle) {
       profitTitle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px;display:inline-block;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>11. Calculated Profit Margin (% of SP)';
@@ -7458,20 +8571,20 @@ function setFkCalcMode(mode) {
   } else {
     // Mode A: Target Margin % active
     if (btnA) {
-      btnA.style.background = '#ffffff';
-      btnA.style.color = '#0f172a';
-      btnA.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+      btnA.style.background = 'var(--card-solid)';
+      btnA.style.color = 'var(--text-1)';
+      btnA.style.boxShadow = 'var(--shadow-sm)';
       btnA.classList.add('active');
     }
     if (btnB) {
       btnB.style.background = 'transparent';
-      btnB.style.color = '#64748b';
+      btnB.style.color = 'var(--text-2)';
       btnB.style.boxShadow = 'none';
       btnB.classList.remove('active');
     }
     if (manualCard) {
-      manualCard.style.borderColor = '#e2e8f0';
-      manualCard.style.background = '#f8fafc';
+      manualCard.style.borderColor = 'var(--border)';
+      manualCard.style.background = 'var(--input-bg)';
     }
     if (manualStatus) {
       manualStatus.textContent = 'Calculated from Target Margin %';
@@ -7607,7 +8720,7 @@ function calculateFlipkartPrice() {
   setText('fkReturnBufferPreview', formatCurrency((fwdShip + revShip) * returnRate) + ' per unit sold');
 
   // Update badges
-  const tierLabels = { bronze:'🥉 Bronze', silver:'🥈 Silver', gold:'🥇 Gold' };
+  const tierLabels = { bronze:'Bronze Tier', silver:'Silver Tier', gold:'Gold Tier' };
   const zoneLabels = { local:'Local', zonal:'Zonal', national:'National' };
   setText('fkTierBadge', tierLabels[tier] || tier);
   setText('fkZoneBadge', zoneLabels[zone] || zone);
@@ -7781,46 +8894,45 @@ function renderFkTrackerTable() {
 
   if (!list.length) {
     if (fkSearchQuery) {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:28px;color:#64748b;">
-        <div style="font-size:24px;margin-bottom:6px;">ðŸ”</div>
-        <div style="font-weight:700;font-size:14px;color:#0f172a;">No listings matching "${escapeHtml(fkSearchQuery)}"</div>
-        <div style="font-size:12px;margin-top:4px;color:#94a3b8;">Try checking the SKU or <a href="javascript:void(0)" onclick="clearFkSearch()" style="color:#2563eb;font-weight:600;">clear search</a></div>
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:28px;color:var(--text-muted);">
+        <div style="display:flex;justify-content:center;margin-bottom:6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        <div style="font-weight:700;font-size:14px;color:var(--text-1);">No listings matching "${escapeHtml(fkSearchQuery)}"</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text-muted);">Try checking the SKU or <a href="javascript:void(0)" onclick="clearFkSearch()" style="color:#38bdf8;font-weight:600;">clear search</a></div>
       </td></tr>`;
     } else {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 48px 24px; color: #64748b;">
-        <div style="font-size: 36px; margin-bottom: 8px;">&#128203;</div>
-        <div style="font-weight: 800; font-size: 16px; color: #0f172a; margin-bottom: 4px;">No Tracked Flipkart Listings Yet</div>
-        <div style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Configure your cost, weight, and profit targets in the calculator to track your listings here.</div>
-        <button type="button" class="btn btn-primary" onclick="switchFkSubtab('calculator')" style="padding: 10px 20px; font-weight: 800; font-size: 13px;">
-          <span>&#129518; Open Flipkart Price Calculator</span>
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
+        <div style="display:flex;justify-content:center;margin-bottom:12px;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <div style="font-weight: 800; font-size: 16px; color: var(--text-1); margin-bottom: 4px;">No Tracked Flipkart Listings Yet</div>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">Configure your cost, weight, and profit targets in the calculator to track your listings here.</div>
+        <button type="button" class="btn btn-primary" onclick="switchFkSubtab('calculator')" style="padding: 10px 20px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/></svg>
+          <span>Open Flipkart Price Calculator</span>
         </button>
       </td></tr>`;
     }
     return;
   }
-  const tierIcons = { bronze:'🥉', silver:'🥈', gold:'🥇' };
 
   tbody.innerHTML = list.map(item => {
     const totalFkWithGst = (item.totalFkFees || 0) + (item.gstOnFkFees || 0);
-    const tierIcon = tierIcons[item.tier] || '🥉';
     const zoneLabel = { local:'Local', zonal:'Zonal', national:'National' }[item.zone] || item.zone || 'Zonal';
     return `
     <tr>
-      <td style="font-size:11.5px;color:#64748b;">${item.date || ''}</td>
-      <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700;">${escapeHtml(item.sku)}</span></td>
-      <td style="font-weight:600;">${escapeHtml(item.name)}</td>
-      <td>${formatCurrency(item.cost)}</td>
-      <td style="font-size:11px;">${tierIcon} ${(item.tier||'bronze').charAt(0).toUpperCase()+(item.tier||'bronze').slice(1)} / ${zoneLabel}</td>
-      <td>${formatCurrency(totalFkWithGst)}</td>
-      <td>${formatCurrency(item.netGovtGst)}</td>
-      <td><b style="color:#2d1f6e;font-size:14px;">${formatCurrency(item.sp)}</b></td>
-      <td style="color:#059669;font-weight:700;">${formatCurrency(item.netProfit)}</td>
-      <td><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:700;">${item.actualMargin}%</span></td>
+      <td style="font-size:11.5px;color:var(--text-muted);">${item.date || ''}</td>
+      <td><span style="background:rgba(59,130,246,0.12);color:#38bdf8;padding:2px 8px;border-radius:6px;font-family:monospace;font-size:12px;font-weight:700;border:1px solid rgba(56,189,248,0.25);">${escapeHtml(item.sku)}</span></td>
+      <td style="font-weight:600;color:var(--text-1);">${escapeHtml(item.name)}</td>
+      <td style="font-weight:700;color:var(--text-1);">${formatCurrency(item.cost)}</td>
+      <td style="font-size:11px;font-weight:600;color:var(--text-2);">${(item.tier||'bronze').charAt(0).toUpperCase()+(item.tier||'bronze').slice(1)} / ${zoneLabel}</td>
+      <td style="color:#f97316;font-weight:700;">${formatCurrency(totalFkWithGst)}</td>
+      <td style="color:var(--text-2);font-weight:600;">${formatCurrency(item.netGovtGst)}</td>
+      <td style="font-weight:900;font-size:15px;color:var(--lynxora-coral);white-space:nowrap;">${formatCurrency(item.sp)}</td>
+      <td style="color:#10b981;font-weight:800;">${formatCurrency(item.netProfit)}</td>
+      <td><span style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);padding:3px 8px;border-radius:6px;font-size:12px;font-weight:800;">${item.actualMargin}%</span></td>
       <td style="white-space:nowrap;">
-        <button class="action-btn" onclick="loadFkEditInCalculator(${item.id})" title="Edit in Calculator" style="width:30px;height:30px;margin-right:6px;background:#e0f2fe;color:#0284c7;border:1px solid #bae6fd;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
+        <button class="action-btn" onclick="loadFkEditInCalculator(${item.id})" title="Edit in Calculator" style="width:30px;height:30px;margin-right:6px;background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
-        <button class="action-btn action-delete" onclick="deleteFkTracked(${item.id})" title="Delete" style="width:30px;height:30px;background:#ffffff;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
+        <button class="action-btn action-delete" onclick="deleteFkTracked(${item.id})" title="Delete" style="width:30px;height:30px;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
       </td>
@@ -7888,19 +9000,19 @@ function deleteFkTracked(id) {
 
   const detailsHtml = `
     <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;display:flex;flex-direction:column;gap:6px;">
-      <div class="confirm-preview-row"><span class="confirm-preview-label">SKU:</span><span class="confirm-preview-val">🏷️ <b>${escapeHtml(item.sku || 'N/A')}</b></span></div>
+      <div class="confirm-preview-row"><span class="confirm-preview-label">SKU:</span><span class="confirm-preview-val"><b>${escapeHtml(item.sku || 'N/A')}</b></span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Product:</span><span class="confirm-preview-val">${escapeHtml(item.name || item.sku || 'Listing')}</span></div>
       <div class="confirm-preview-row"><span class="confirm-preview-label">Selling Price:</span><span class="confirm-preview-val" style="color:#059669;font-weight:800;">${formatCurrency(item.sp || 0)}</span></div>
     </div>
   `;
 
   openConfirmModal({
-    title: '⚠️ Delete Flipkart Tracked Listing?',
+    title: 'Delete Flipkart Tracked Listing?',
     message: 'Are you sure you want to remove this tracked listing from your Flipkart Pricing Calculator?',
     detailsHtml: detailsHtml,
-    actionText: '🗑️ Yes, Remove Listing',
+    actionText: 'Yes, Remove Listing',
     actionClass: 'btn-danger',
-    cancelText: '✕ Cancel / Keep',
+    cancelText: 'Cancel / Keep',
     onConfirm: () => {
       trackedFlipkartList = trackedFlipkartList.filter(i => i.id !== id);
       saveFkTracking('Removed Flipkart price for ' + (item.sku || ''));
@@ -7915,11 +9027,11 @@ function deleteFkTracked(id) {
 function clearAllFlipkartTracked() {
   if (!trackedFlipkartList.length) return;
   openConfirmModal({
-    title: '⚠️ Clear ALL Flipkart Tracked Listings?',
+    title: 'Clear ALL Flipkart Tracked Listings?',
     message: `Are you sure you want to delete all <b>${trackedFlipkartList.length} Flipkart listings</b> from the price calculator? This cannot be undone.`,
-    actionText: '🗑️ Yes, Clear All',
+    actionText: 'Yes, Clear All',
     actionClass: 'btn-danger',
-    cancelText: '✕ Cancel / Keep',
+    cancelText: 'Cancel / Keep',
     onConfirm: () => {
       trackedFlipkartList = [];
       saveFkTracking('Cleared all Flipkart tracked prices', true);
@@ -8065,7 +9177,7 @@ function importFlipkartCSV(input) {
         renderFkTrackerTable();
         updateFkTrackedBadge();
         switchFkSubtab('tracker');
-        showToast(`Successfully imported ${importedCount} Flipkart tracked listings! 🚀`, 'success');
+        showToast(`Successfully imported ${importedCount} Flipkart tracked listings!`, 'success');
       } else {
         showToast('No valid Flipkart listings found in CSV.', 'error');
       }
@@ -8077,6 +9189,59 @@ function importFlipkartCSV(input) {
     }
   };
   reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════════════
+//  PASTEL AESTHETIC THEME ENGINE (PASTEL DREAM / MIDNIGHT VELVET)
+// ══════════════════════════════════════════════════
+function getAppTheme() {
+  return localStorage.getItem('lynxora_theme') || 'light';
+}
+
+function setAppTheme(theme) {
+  const root = document.documentElement;
+  const isDark = theme === 'dark';
+  root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  localStorage.setItem('lynxora_theme', isDark ? 'dark' : 'light');
+
+  // Update Topbar Toggle Button
+  const topbarLabel = document.getElementById('themeToggleLabel');
+  const topbarIcon = document.getElementById('themeToggleIcon');
+  if (topbarLabel) topbarLabel.textContent = isDark ? 'Midnight Velvet' : 'Pastel Dream';
+  if (topbarIcon) {
+    topbarIcon.innerHTML = isDark
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+  }
+
+  // Update Sidebar Toggle Button
+  const sbLabel = document.getElementById('sidebarThemeToggleLabel');
+  const sbIcon = document.getElementById('sidebarThemeToggleIcon');
+  if (sbLabel) sbLabel.textContent = isDark ? 'Midnight Velvet' : 'Pastel Dream Mode';
+  if (sbIcon) {
+    sbIcon.innerHTML = isDark
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+  }
+
+  // If dashboard is active and charts exist, update them with theme colors
+  if (typeof activePage !== 'undefined' && activePage === 'dashboard' && typeof updateDashboard === 'function') {
+    try { updateDashboard(); } catch (e) {}
+  }
+}
+
+function toggleAppTheme() {
+  const current = getAppTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  setAppTheme(next);
+  if (typeof showToast === 'function') {
+    showToast(next === 'dark' ? 'Switched to Midnight Velvet Theme' : 'Switched to Pastel Dream Theme', 'info');
+  }
+}
+
+function initTheme() {
+  const saved = getAppTheme();
+  setAppTheme(saved);
 }
 
 document.addEventListener('DOMContentLoaded', init);
