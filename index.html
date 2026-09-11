@@ -39,7 +39,41 @@
   <!-- HTML2PDF for Direct Tax Invoice PDF Generation & Download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=25.1">
+  <link rel="stylesheet" href="style.css?v=25.2">
+  <script>
+    (function() {
+      // 1. Force flush obsolete caches if version updated
+      var V = '25.2';
+      if (localStorage.getItem('lynxora_ver') !== V) {
+        localStorage.setItem('lynxora_ver', V);
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            names.forEach(function(n) { caches.delete(n); });
+          });
+        }
+      }
+      // 2. Sanitize any button that has both an SVG plus and a text plus
+      function cleanButtons() {
+        document.querySelectorAll('button').forEach(function(btn) {
+          if (btn.querySelector('svg')) {
+            btn.querySelectorAll('span').forEach(function(span) {
+              if (span.textContent.trim().indexOf('+') === 0) {
+                span.textContent = span.textContent.trim().replace(/^\+\s*/, '');
+              }
+            });
+            btn.childNodes.forEach(function(node) {
+              if (node.nodeType === 3 && node.nodeValue.trim().indexOf('+') === 0) {
+                node.nodeValue = node.nodeValue.trim().replace(/^\+\s*/, '');
+              }
+            });
+          }
+        });
+      }
+      window.addEventListener('DOMContentLoaded', cleanButtons);
+      window.addEventListener('load', cleanButtons);
+      setInterval(cleanButtons, 400);
+    })();
+  </script>
 </head>
 <body>
 
@@ -3527,7 +3561,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=25.1" defer></script>
+  <script src="app.js?v=25.2" defer></script>
 
   <!-- MOBILE BOTTOM NAVIGATION BAR -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav">
@@ -3618,7 +3652,7 @@
         }
       });
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js?v=25.2')
           .then(reg => {
             console.log('[Lynxora] SW registered:', reg.scope);
             reg.update();

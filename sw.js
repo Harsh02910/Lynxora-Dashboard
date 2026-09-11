@@ -2,7 +2,7 @@
 //  Lynxora PWA â€” Service Worker (Network-First)
 //  Always fetches latest files, falls back to offline cache
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-const CACHE_NAME = 'lynxora-v25.1';
+const CACHE_NAME = 'lynxora-v25.2';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
