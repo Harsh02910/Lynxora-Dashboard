@@ -339,21 +339,21 @@ function getRoleEmoji(role) {
 }
 
 function applyUserRolePermissions() {
-  if (!currentUser) return;
+  const isOwner = !currentUser || currentUser.role === 'owner';
+  const isViewer = currentUser && currentUser.role === 'viewer';
 
-  // Sidebar profile
-  const nameEl = document.getElementById('sidebarUserName');
-  const roleEl = document.getElementById('sidebarRoleLabel');
-  const avatarEl = document.getElementById('sidebarAvatar');
+  if (currentUser) {
+    // Sidebar profile
+    const nameEl = document.getElementById('sidebarUserName');
+    const roleEl = document.getElementById('sidebarRoleLabel');
+    const avatarEl = document.getElementById('sidebarAvatar');
 
-  if (nameEl) nameEl.innerText = currentUser.name;
-  if (roleEl) roleEl.innerText = getRoleEmoji(currentUser.role);
-  if (avatarEl) avatarEl.innerText = (currentUser.name || 'U').charAt(0).toUpperCase();
+    if (nameEl) nameEl.innerText = currentUser.name;
+    if (roleEl) roleEl.innerText = getRoleEmoji(currentUser.role);
+    if (avatarEl) avatarEl.innerText = (currentUser.name || 'U').charAt(0).toUpperCase();
+  }
 
   // Role permissions
-  const isOwner = currentUser.role === 'owner';
-  const isViewer = currentUser.role === 'viewer';
-
   const userMgmtCard = document.getElementById('userManagementCard');
   if (userMgmtCard) {
     userMgmtCard.style.display = isOwner ? 'block' : 'none';
@@ -367,6 +367,11 @@ function applyUserRolePermissions() {
   const recordsClearAllBtn = document.getElementById('recordsClearAllBtn');
   if (recordsClearAllBtn) {
     recordsClearAllBtn.style.display = isOwner ? 'inline-flex' : 'none';
+  }
+
+  const clearAllInvBtn = document.getElementById('clearAllInvBtn');
+  if (clearAllInvBtn) {
+    clearAllInvBtn.style.display = isOwner ? 'inline-flex' : 'none';
   }
 
   const addRecordBtn = document.getElementById('addRecordBtn');
@@ -1575,8 +1580,8 @@ function renderRecordsTable() {
     }
 
     const isViewer = currentUser && currentUser.role === 'viewer';
-    const canDelete = currentUser && currentUser.role !== 'viewer';
-    const canEdit = currentUser && currentUser.role !== 'viewer';
+    const canDelete = !currentUser || currentUser.role !== 'viewer';
+    const canEdit = !currentUser || currentUser.role !== 'viewer';
     const isSelected = selectedRecordIds.has(r.id);
 
     return `<tr class="${isSelected ? 'row-selected' : ''}">
@@ -1717,14 +1722,14 @@ function updateBulkToolbar(filteredList) {
 
   if (deleteBtnText) deleteBtnText.innerText = `Delete Selected (${count})`;
 
-  const canDelete = currentUser && currentUser.role !== 'viewer';
+  const canDelete = !currentUser || currentUser.role !== 'viewer';
   if (deleteBtn) {
     deleteBtn.style.display = canDelete ? 'inline-flex' : 'none';
   }
 }
 
 function confirmBulkDelete() {
-  const canDelete = currentUser && currentUser.role !== 'viewer';
+  const canDelete = !currentUser || currentUser.role !== 'viewer';
   if (!canDelete) {
     showToast('View-only accounts cannot delete records.', 'error');
     return;
@@ -2018,7 +2023,7 @@ function openModal(id = null) {
   const partyInput = document.getElementById('recordPartyName');
   if (partyInput) partyInput.value = '';
 
-  const canDelete = currentUser && currentUser.role !== 'viewer';
+  const canDelete = !currentUser || currentUser.role !== 'viewer';
 
   if (id) {
     title.textContent = 'Edit Record';
@@ -2314,7 +2319,18 @@ function openConfirmModal(options) {
   const detailsEl = document.getElementById('confirmRecordDetails');
   const actionBtn = document.getElementById('confirmActionBtn');
   const cancelBtn = document.getElementById('confirmCancelBtn');
-  if (!overlay) return;
+
+  // If modal elements missing, fallback to native confirm dialog
+  if (!overlay || !actionBtn) {
+    console.warn('[Lynxora] Modal overlay or action button not found, falling back to native confirm');
+    const plainMsg = (options.title ? options.title + '\n\n' : '') + (options.message || '').replace(/<[^>]*>/g, '');
+    if (window.confirm(plainMsg)) {
+      if (typeof options.onConfirm === 'function') {
+        try { options.onConfirm(); } catch (e) { console.error(e); }
+      }
+    }
+    return;
+  }
 
   if (titleEl) titleEl.innerHTML = options.title || 'Are you sure?';
   if (msgEl) msgEl.innerHTML = options.message || 'This action cannot be undone.';
@@ -2329,28 +2345,56 @@ function openConfirmModal(options) {
     }
   }
 
+  pendingConfirmCallback = typeof options.onConfirm === 'function' ? options.onConfirm : null;
+
   if (actionBtn) {
-    actionBtn.innerHTML = options.actionText || 'Yes, Delete';
+    actionBtn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+      <span>${escapeHtml(options.actionText || 'Yes, Delete')}</span>
+    `;
     actionBtn.className = `btn ${options.actionClass || 'btn-danger'}`;
+    actionBtn.onclick = executePendingConfirmAction;
+    actionBtn.setAttribute('onclick', 'executePendingConfirmAction()');
+    actionBtn.disabled = false;
   }
 
   if (cancelBtn) {
     cancelBtn.innerHTML = options.cancelText || '✕ Cancel / Keep';
+    cancelBtn.onclick = closeConfirmModal;
   }
 
-  pendingConfirmCallback = typeof options.onConfirm === 'function' ? options.onConfirm : null;
+  overlay.style.zIndex = '999999';
   overlay.style.display = 'flex';
   overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
 }
+
+function executePendingConfirmAction() {
+  console.log('[Lynxora] executePendingConfirmAction called');
+  if (typeof pendingConfirmCallback === 'function') {
+    const cb = pendingConfirmCallback;
+    pendingConfirmCallback = null;
+    try {
+      cb();
+    } catch (err) {
+      console.error('[Lynxora] Error executing confirm callback:', err);
+      showToast('Error during action: ' + err.message, 'error');
+    }
+  }
+  closeConfirmModal();
+}
+window.executePendingConfirmAction = executePendingConfirmAction;
 
 function closeConfirmModal() {
   const overlay = document.getElementById('confirmModalOverlay');
   if (overlay) {
     overlay.classList.remove('active');
     overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
   }
   pendingConfirmCallback = null;
 }
+window.closeConfirmModal = closeConfirmModal;
 
 function deleteRecord(id) {
   const recIdStr = String(id);
@@ -2360,7 +2404,7 @@ function deleteRecord(id) {
     return;
   }
 
-  const canDelete = currentUser && currentUser.role !== 'viewer';
+  const canDelete = !currentUser || currentUser.role !== 'viewer';
   if (!canDelete) {
     showToast('View-only accounts cannot delete transactions.', 'error');
     return;
@@ -2641,10 +2685,7 @@ function attachEventListeners() {
   const confirmActionBtn = document.getElementById('confirmActionBtn');
   if (confirmActionBtn) {
     confirmActionBtn.addEventListener('click', () => {
-      if (typeof pendingConfirmCallback === 'function') {
-        pendingConfirmCallback();
-      }
-      closeConfirmModal();
+      executePendingConfirmAction();
     });
   }
 
@@ -3103,22 +3144,33 @@ function mergeRecords(localList, remoteList, remoteDeletedIds = []) {
 }
 
 function mergeInventory(localList, remoteList, remoteDeletedIds = []) {
-  const allDeleted = new Set([...(deletedInventoryIds || []), ...(remoteDeletedIds || [])].map(String));
+  const allDeleted = new Set([...(deletedInventoryIds || []), ...(remoteDeletedIds || [])].map(s => String(s).trim().toLowerCase()));
+  const isDeleted = (i) => {
+    if (!i) return true;
+    const idStr = i.id != null ? String(i.id).trim().toLowerCase() : '';
+    const skuStr = i.sku ? String(i.sku).trim().toLowerCase() : '';
+    const nameStr = i.name ? String(i.name).trim().toLowerCase() : '';
+    if (idStr && allDeleted.has(idStr)) return true;
+    if (skuStr && allDeleted.has(skuStr)) return true;
+    if (nameStr && allDeleted.has(nameStr)) return true;
+    return false;
+  };
+
   if (!Array.isArray(remoteList)) {
     const list = Array.isArray(localList) ? localList : [];
-    return list.filter(i => i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku))));
+    return list.filter(i => !isDeleted(i));
   }
   if (!Array.isArray(localList) || localList.length === 0) {
-    return remoteList.filter(i => i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku))));
+    return remoteList.filter(i => !isDeleted(i));
   }
   const map = new Map();
   remoteList.forEach(i => {
-    if (i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku)))) {
+    if (!isDeleted(i)) {
       map.set(String(i.id), i);
     }
   });
   localList.forEach(i => {
-    if (i && i.id != null && !allDeleted.has(String(i.id)) && (!i.sku || !allDeleted.has(String(i.sku)))) {
+    if (!isDeleted(i)) {
       if (!map.has(String(i.id))) {
         map.set(String(i.id), i);
       } else {
@@ -3382,14 +3434,19 @@ function applyCloudData(data, source = 'realtime') {
 
   // 2. Inventory Items
   const remoteInventory = Array.isArray(data.inventory) ? data.inventory : [];
-  const mergedInv = mergeInventory(inventoryItems, remoteInventory, data.deletedInventoryIds);
+  let mergedInv;
+  if (remoteInventory.length === 0 && Array.isArray(data.inventory) && isCloudCleared) {
+    mergedInv = [];
+  } else {
+    mergedInv = mergeInventory(inventoryItems, remoteInventory, data.deletedInventoryIds);
+  }
   if (JSON.stringify(inventoryItems) !== JSON.stringify(mergedInv)) {
     inventoryItems = mergedInv;
     localStorage.setItem('lynxora_inventory', JSON.stringify(inventoryItems));
     hasChanges = true;
     changeList.push('Inventory');
   }
-  if (mergedInv.length > remoteInventory.length) {
+  if (!isCloudCleared && mergedInv.length > remoteInventory.length) {
     setTimeout(() => broadcastToCloud('inventory', 'Synced local inventory to cloud', false), 1000);
   }
 
@@ -5260,12 +5317,28 @@ function promptClearAllStockMovements() {
   });
 }
 function loadInventory() {
+  loadDeletedInventoryIds();
   const saved = localStorage.getItem('lynxora_inventory');
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      const delSet = new Set((deletedInventoryIds || []).map(String));
-      inventoryItems = (Array.isArray(parsed) ? parsed : []).filter(i => i && i.id != null && !delSet.has(String(i.id)) && (!i.sku || !delSet.has(String(i.sku))));
+      const delSet = new Set((deletedInventoryIds || []).map(s => String(s).trim().toLowerCase()));
+      inventoryItems = (Array.isArray(parsed) ? parsed : []).map((item, idx) => {
+        if (!item) return null;
+        if (item.id == null || item.id === '') {
+          item.id = Date.now() + idx;
+        }
+        return item;
+      }).filter(i => {
+        if (!i) return false;
+        const idStr = String(i.id).trim().toLowerCase();
+        const skuStr = i.sku ? String(i.sku).trim().toLowerCase() : '';
+        const nameStr = i.name ? String(i.name).trim().toLowerCase() : '';
+        if (delSet.has(idStr)) return false;
+        if (skuStr && delSet.has(skuStr)) return false;
+        if (nameStr && delSet.has(nameStr)) return false;
+        return true;
+      });
     } catch {
       inventoryItems = [];
     }
@@ -5363,7 +5436,7 @@ function renderInventory() {
 
   const isViewer = currentUser && currentUser.role === 'viewer';
   const canDelete = !currentUser || currentUser.role !== 'viewer';
-  const canEdit = currentUser && currentUser.role !== 'viewer';
+  const canEdit = !currentUser || currentUser.role !== 'viewer';
 
   tbody.innerHTML = page.map(item => {
     const qty = item.quantity || 0;
@@ -6595,8 +6668,13 @@ function deleteInventoryProduct(id) {
     return;
   }
 
-  const prodIdStr = String(id);
-  const item = inventoryItems.find(i => String(i.id) === prodIdStr || (i.sku && i.sku === prodIdStr));
+  const target = String(id != null ? id : '').trim().toLowerCase();
+  const item = inventoryItems.find(i => 
+    (i.id != null && String(i.id).trim().toLowerCase() === target) ||
+    (i.sku && String(i.sku).trim().toLowerCase() === target) ||
+    (i.name && String(i.name).trim().toLowerCase() === target)
+  );
+
   if (!item) {
     showToast('Product not found or already deleted.', 'info');
     return;
@@ -6622,22 +6700,35 @@ function deleteInventoryProduct(id) {
 
   openConfirmModal({
     title: `Delete Product "${item.name}"?`,
-    message: `Are you sure you want to permanently delete <b>${escapeHtml(item.name)} (${escapeHtml(item.sku || prodIdStr)})</b> from your inventory catalogue? This action cannot be undone.`,
+    message: `Are you sure you want to permanently delete <b>${escapeHtml(item.name)} (${escapeHtml(item.sku || item.id)})</b> from your inventory catalogue? This action cannot be undone.`,
     detailsHtml: detailsHtml,
     actionText: 'Yes, Delete Product',
     actionClass: 'btn-danger',
     cancelText: '✕ Cancel / Keep',
     onConfirm: () => {
-      const actualId = String(item.id);
-      if (!deletedInventoryIds.includes(actualId)) {
+      const actualId = item.id != null ? String(item.id) : '';
+      const actualSku = item.sku ? String(item.sku).trim() : '';
+      const actualName = item.name ? String(item.name).trim() : '';
+
+      if (actualId && !deletedInventoryIds.includes(actualId)) {
         deletedInventoryIds.push(actualId);
       }
-      if (item.sku && !deletedInventoryIds.includes(item.sku)) {
-        deletedInventoryIds.push(item.sku);
+      if (actualSku && !deletedInventoryIds.includes(actualSku)) {
+        deletedInventoryIds.push(actualSku);
+      }
+      if (actualName && !deletedInventoryIds.includes(actualName)) {
+        deletedInventoryIds.push(actualName);
       }
       saveDeletedInventoryIds();
 
-      inventoryItems = inventoryItems.filter(i => String(i.id) !== actualId && (!item.sku || i.sku !== item.sku));
+      inventoryItems = inventoryItems.filter(i => {
+        if (!i) return false;
+        if (actualId && String(i.id) === actualId) return false;
+        if (actualSku && i.sku && String(i.sku).trim() === actualSku) return false;
+        if (actualName && i.name && String(i.name).trim().toLowerCase() === actualName.toLowerCase()) return false;
+        return true;
+      });
+
       saveInventory(`Deleted product: ${item.name} (${item.sku || actualId})`, true);
 
       showToast(`Product "${item.name}" deleted successfully. ✓`, 'info');
@@ -6647,13 +6738,25 @@ function deleteInventoryProduct(id) {
     }
   });
 }
+window.deleteInventoryProduct = deleteInventoryProduct;
+
+function deleteInventoryProductFromModal() {
+  const targetId = editingInvId;
+  closeInventoryModal();
+  if (targetId) {
+    setTimeout(() => {
+      deleteInventoryProduct(targetId);
+    }, 80);
+  }
+}
+window.deleteInventoryProductFromModal = deleteInventoryProductFromModal;
 
 function promptClearAllInventory() {
-  if (inventoryItems.length === 0) {
+  if (!inventoryItems || inventoryItems.length === 0) {
     showToast('Inventory is already empty.', 'info');
     return;
   }
-  const canDelete = currentUser && (currentUser.role === 'owner' || currentUser.role === 'partner');
+  const canDelete = !currentUser || (currentUser.role === 'owner' || currentUser.role === 'partner');
   if (!canDelete) {
     showToast('Only Owner and Partner accounts can clear all inventory.', 'error');
     return;
@@ -6667,12 +6770,19 @@ function promptClearAllInventory() {
     cancelText: '✕ Cancel / Keep',
     onConfirm: () => {
       inventoryItems.forEach(i => {
-        if (i && i.id != null) {
-          const sId = String(i.id);
-          if (!deletedInventoryIds.includes(sId)) deletedInventoryIds.push(sId);
-        }
-        if (i && i.sku && !deletedInventoryIds.includes(i.sku)) {
-          deletedInventoryIds.push(i.sku);
+        if (i) {
+          if (i.id != null) {
+            const sId = String(i.id);
+            if (!deletedInventoryIds.includes(sId)) deletedInventoryIds.push(sId);
+          }
+          if (i.sku) {
+            const sSku = String(i.sku).trim();
+            if (!deletedInventoryIds.includes(sSku)) deletedInventoryIds.push(sSku);
+          }
+          if (i.name) {
+            const sName = String(i.name).trim();
+            if (!deletedInventoryIds.includes(sName)) deletedInventoryIds.push(sName);
+          }
         }
       });
       saveDeletedInventoryIds();
@@ -6685,6 +6795,7 @@ function promptClearAllInventory() {
     }
   });
 }
+window.promptClearAllInventory = promptClearAllInventory;
 
 function exportInventoryCSV() {
   if (inventoryItems.length === 0) {

@@ -39,7 +39,7 @@
   <!-- HTML2PDF for Direct Tax Invoice PDF Generation & Download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="style.css?v=2.6.0">
+  <link rel="stylesheet" href="style.css?v=25.0">
 </head>
 <body>
 
@@ -2175,8 +2175,12 @@
             <h3 class="settings-card-title">Data Management</h3>
           </div>
           <div class="settings-card-body">
-            <p style="font-size:13px;color:#64748b;">Clear all financial records from this device. Download a CSV backup first.</p>
-            <button class="btn btn-danger" id="clearAllDataBtn">Clear All Records</button>
+            <p style="font-size:13px;color:#64748b;margin-bottom:12px;">Manage and clear data stored on this device. Download CSV backups before clearing.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button type="button" class="btn btn-danger" id="clearAllDataBtn" onclick="promptClearAllRecords()" style="width:100%;justify-content:center;">Clear All Financial Records</button>
+              <button type="button" class="btn btn-danger" id="clearAllInvSettingsBtn" onclick="promptClearAllInventory()" style="width:100%;justify-content:center;background:#b91c1c;">Clear All Inventory Products</button>
+              <button type="button" class="btn btn-ghost" onclick="promptClearAllStockMovements()" style="width:100%;justify-content:center;color:#dc2626;border-color:#fecaca;">Clear Stock Movement Logs</button>
+            </div>
           </div>
         </div>
 
@@ -2634,7 +2638,7 @@
   </div>
 
   <!-- INTERNAL WARNING & CONFIRMATION MODAL -->
-  <div class="modal-overlay" id="confirmModalOverlay" style="z-index: 1200;">
+  <div class="modal-overlay" id="confirmModalOverlay" style="z-index: 999999; display: none;">
     <div class="modal confirm-modal" id="confirmModal" style="max-width: 460px; text-align: center; padding: 26px 24px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);">
       <div id="confirmWarningBadge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.25);color:#dc2626;padding:5px 14px;border-radius:20px;font-size:11.5px;font-weight:800;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -2651,7 +2655,7 @@
 
       <div class="form-actions" style="justify-content: center; gap: 12px; margin-top: 0;">
         <button type="button" class="btn btn-ghost" id="confirmCancelBtn" onclick="closeConfirmModal()" style="flex: 1; justify-content: center; font-weight: 700; border: 1.5px solid var(--border); border-radius: 10px; height: 44px;">Cancel / Keep</button>
-        <button type="button" class="btn btn-danger" id="confirmActionBtn" style="flex: 1; justify-content: center; font-weight: 800; border-radius: 10px; height: 44px; box-shadow: 0 4px 14px rgba(220,38,38,0.35); font-size: 14px; display:inline-flex; align-items:center; gap:6px;">
+        <button type="button" class="btn btn-danger" id="confirmActionBtn" onclick="executePendingConfirmAction()" style="flex: 1; justify-content: center; font-weight: 800; border-radius: 10px; height: 44px; box-shadow: 0 4px 14px rgba(220,38,38,0.35); font-size: 14px; display:inline-flex; align-items:center; gap:6px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           <span>Yes, Delete</span>
         </button>
@@ -2798,7 +2802,7 @@
         </div>
 
         <div class="form-actions" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-          <button type="button" class="btn btn-danger" id="invModalDeleteBtn" onclick="deleteInventoryProduct(editingInvId); closeInventoryModal();" style="display:none;align-items:center;gap:6px;background:#dc2626;color:white;font-weight:700;border:none;border-radius:8px;padding:9px 15px;cursor:pointer;">
+          <button type="button" class="btn btn-danger" id="invModalDeleteBtn" onclick="deleteInventoryProductFromModal()" style="display:none;align-items:center;gap:6px;background:#dc2626;color:white;font-weight:700;border:none;border-radius:8px;padding:9px 15px;cursor:pointer;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             <span>Delete Product</span>
           </button>
@@ -3523,7 +3527,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.6.0" defer></script>
+  <script src="app.js?v=25.0" defer></script>
 
   <!-- MOBILE BOTTOM NAVIGATION BAR -->
   <nav class="mobile-bottom-nav" id="mobileBottomNav">
